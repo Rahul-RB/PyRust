@@ -7,9 +7,9 @@
 
 ## To run:
 - Following runs 14 tests on the Lexer.<br>
-	`python3 autoTestLexer.py`  
+	`python3 TestLexerAuto.py`  
 - Following runs any manual tests; tests specified inside the file.<br>
-	`python3 manualTestLexer.py` 
+	`python3 TestLexerManual.py` 
 
 ## Log:
 - Lexer is passing tests.

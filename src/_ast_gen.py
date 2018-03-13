@@ -174,12 +174,10 @@ r'''#-----------------------------------------------------------------
 # run the generator again.
 # ** ** *** ** **
 #
-# pycparser: c_ast.py
+# pycparser: RustAst.py
 #
 # AST Node classes.
 #
-# Eli Bendersky [http://eli.thegreenplace.net]
-# License: BSD
 #-----------------------------------------------------------------
 
 '''

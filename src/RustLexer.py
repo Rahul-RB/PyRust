@@ -71,7 +71,9 @@ class RustLexer(object):
 		self.lexer.lineno = 1
 
 	def stripComments(self,text):
-		return re.sub('//.*?(\r\n?|\n)|/\*.*?\*/', '', text, flags=re.S)
+		res = re.sub('//.*?(\r\n?|\n)|/\*.*?\*/', '', text, flags=re.S)
+		print("Code Without Comments:\n",res)
+		return res
 
 	def input(self, text):
 		self.lexer.input(self.stripComments(text))

@@ -1,1 +1,6 @@
 *.pyc
+*.odt
+edit-grammar.y
+rust-grammar.y
+src/__pycache__
+Grammar.pdf

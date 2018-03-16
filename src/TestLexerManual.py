@@ -1,5 +1,5 @@
-import lexer
-from lexer import RustLexer
+import RustLexer
+from RustLexer import RustLexer
 
 
 def tokenList(clex):
@@ -45,12 +45,13 @@ m.input("""
 	*/
 	panic!("asdfasdf");
 	/* ** */
+	/**/ 
 	/*//*/ 
-	/*/**/ 
 	////
 	/// This is a doc comment type 1 	
 	//! This is a doc comment type 2 
 }""")
 
 m.test()
+print("Tokens being generated:")
 print(tokenTypes(m))

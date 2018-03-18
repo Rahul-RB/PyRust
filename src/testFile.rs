@@ -4,5 +4,7 @@ fn main() {
 	/*
 		this is one type of commetn
 	*/
-	panic!("asdfasdf");
+	let xs: [i32; 5] = [1, 2, 3, 4, 5];
+	println!("{}", xs[0.0]);
+	// panic!("asdfasdf");
 }

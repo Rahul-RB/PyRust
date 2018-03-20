@@ -525,12 +525,12 @@ class RustParser(PLYParser):
 		#
 		p[0] = p[1]
 
-	def p_translation_unit_2(self, p):
-		""" translation_unit    : translation_unit external_declaration
-		"""
-		if p[2] is not None:
-			p[1].extend(p[2])
-		p[0] = p[1]
+	# def p_translation_unit_2(self, p):
+	# 	""" translation_unit    : translation_unit external_declaration
+	# 	"""
+	# 	if p[2] is not None:
+	# 		p[1].extend(p[2])
+	# 	p[0] = p[1]
 
 	# Declarations always come as lists (because they can be
 	# several in one line), so we wrap the function definition
@@ -542,56 +542,56 @@ class RustParser(PLYParser):
 		"""
 		p[0] = [p[1]]
 
-	def p_external_declaration_2(self, p):
-		""" external_declaration    : declaration
-		"""
-		p[0] = p[1]
+	# def p_external_declaration_2(self, p):
+	# 	""" external_declaration    : declaration
+	# 	"""
+	# 	p[0] = p[1]
 
-	def p_external_declaration_3(self, p):
-		""" external_declaration    : pp_directive
-									| pppragma_directive
-		"""
-		p[0] = [p[1]]
+	# def p_external_declaration_3(self, p):
+	# 	""" external_declaration    : pp_directive
+	# 								| pppragma_directive
+	# 	"""
+	# 	p[0] = [p[1]]
 
-	def p_external_declaration_4(self, p):
-		""" external_declaration    : SEMI
-		"""
-		p[0] = None
+	# def p_external_declaration_4(self, p):
+	# 	""" external_declaration    : SEMI
+	# 	"""
+	# 	p[0] = None
 
-	def p_pp_directive(self, p):
-		""" pp_directive  : PPHASH
-		"""
-		self._parse_error('Directives not supported yet',
-						  self._token_coord(p, 1))
+	# def p_pp_directive(self, p):
+	# 	""" pp_directive  : PPHASH
+	# 	"""
+	# 	self._parse_error('Directives not supported yet',
+	# 					  self._token_coord(p, 1))
 
-	def p_pppragma_directive(self, p):
-		""" pppragma_directive      : PPPRAGMA
-									| PPPRAGMA PPPRAGMASTR
-		"""
-		if len(p) == 3:
-			p[0] = RustAst.Pragma(p[2], self._token_coord(p, 2))
-		else:
-			p[0] = RustAst.Pragma("", self._token_coord(p, 1))
+	# def p_pppragma_directive(self, p):
+	# 	""" pppragma_directive      : PPPRAGMA
+	# 								| PPPRAGMA PPPRAGMASTR
+	# 	"""
+	# 	if len(p) == 3:
+	# 		p[0] = RustAst.Pragma(p[2], self._token_coord(p, 2))
+	# 	else:
+	# 		p[0] = RustAst.Pragma("", self._token_coord(p, 1))
 
 	# In function definitions, the declarator can be followed by
 	# a declaration list, for old "K&R style" function definitios.
 	#
-	def p_function_definition_1(self, p):
-		""" function_definition : id_declarator declaration_list_opt compound_statement
-		"""
-		# no declaration specifiers - 'int' becomes the default type
-		spec = dict(
-			qual=[],
-			storage=[],
-			type=[RustAst.IdentifierType(['int'],
-									   coord=self._token_coord(p, 1))],
-			function=[])
+	# def p_function_definition_1(self, p):
+	# 	""" function_definition : id_declarator declaration_list_opt compound_statement
+	# 	"""
+	# 	# no declaration specifiers - 'int' becomes the default type
+	# 	spec = dict(
+	# 		qual=[],
+	# 		storage=[],
+	# 		type=[RustAst.IdentifierType(['int'],
+	# 								   coord=self._token_coord(p, 1))],
+	# 		function=[])
 
-		p[0] = self._build_function_definition(
-			spec=spec,
-			decl=p[1],
-			param_decls=p[2],
-			body=p[3])
+	# 	p[0] = self._build_function_definition(
+	# 		spec=spec,
+	# 		decl=p[1],
+	# 		param_decls=p[2],
+	# 		body=p[3])
 
 	def p_function_definition_2(self, p):
 		""" function_definition : declaration_specifiers id_declarator declaration_list_opt compound_statement
@@ -603,6 +603,15 @@ class RustParser(PLYParser):
 			decl=p[2],
 			param_decls=p[3],
 			body=p[4])
+	# def p_function_definition(self,p):
+	# 		"""
+	# 		function_definition : FN MAIN LPAREN RPAREN compound_statement 
+	# 		"""
+	# 		p[0] = self._build_function_definition(
+	# 			spec=spec,
+	# 			decl=p[2],
+	# 			param_decls=p[3],
+	# 			body=p[4])
 
 	def p_statement(self, p):
 		""" statement   : labeled_statement
@@ -610,8 +619,6 @@ class RustParser(PLYParser):
 						| compound_statement
 						| selection_statement
 						| iteration_statement
-						| jump_statement
-						| pppragma_directive
 		"""
 		p[0] = p[1]
 
@@ -657,16 +664,16 @@ class RustParser(PLYParser):
 	#       #pragma omp critical
 	#       sum += 1;
 	#   }
-	def p_pragmacomp_or_statement(self, p):
-		""" pragmacomp_or_statement     : pppragma_directive statement
-										| statement
-		"""
-		if isinstance(p[1], RustAst.Pragma) and len(p) == 3:
-			p[0] = RustAst.Compound(
-				block_items=[p[1], p[2]],
-				coord=self._token_coord(p, 1))
-		else:
-			p[0] = p[1]
+	# def p_pragmacomp_or_statement(self, p):
+	# 	""" pragmacomp_or_statement     : pppragma_directive statement
+	# 									| statement
+	# 	"""
+	# 	if isinstance(p[1], RustAst.Pragma) and len(p) == 3:
+	# 		p[0] = RustAst.Compound(
+	# 			block_items=[p[1], p[2]],
+	# 			coord=self._token_coord(p, 1))
+	# 	else:
+	# 		p[0] = p[1]
 
 	# In C, declarations can come several in a line:
 	#   int x, *px, romulo = 5;
@@ -844,8 +851,6 @@ class RustParser(PLYParser):
 
 	def p_type_qualifier(self, p):
 		""" type_qualifier  : CONST
-							| RESTRICT
-							| VOLATILE
 		"""
 		p[0] = p[1]
 
@@ -1077,11 +1082,11 @@ class RustParser(PLYParser):
 		"""
 		p[0] = p[1]
 
-	@parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
-	def p_xxx_declarator_2(self, p):
-		""" xxx_declarator  : pointer direct_xxx_declarator
-		"""
-		p[0] = self._type_modify_decl(p[2], p[1])
+	# @parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
+	# def p_xxx_declarator_2(self, p):
+	# 	""" xxx_declarator  : pointer direct_xxx_declarator
+	# 	"""
+	# 	p[0] = self._type_modify_decl(p[2], p[1])
 
 	@parameterized(('id', 'ID'), ('typeid', 'TYPEID'), ('typeid_noparen', 'TYPEID'))
 	def p_direct_xxx_declarator_1(self, p):
@@ -1177,60 +1182,63 @@ class RustParser(PLYParser):
 
 		p[0] = self._type_modify_decl(decl=p[1], modifier=func)
 
-	def p_pointer(self, p):
-		""" pointer : TIMES type_qualifier_list_opt
-					| TIMES type_qualifier_list_opt pointer
-		"""
-		coord = self._token_coord(p, 1)
-		# Pointer decls nest from inside out. This is important when different
-		# levels have different qualifiers. For example:
-		#
-		#  char * const * p;
-		#
-		# Means "pointer to const pointer to char"
-		#
-		# While:
-		#
-		#  char ** const p;
-		#
-		# Means "const pointer to pointer to char"
-		#
-		# So when we construct PtrDecl nestings, the leftmost pointer goes in
-		# as the most nested type.
-		nested_type = RustAst.PtrDecl(quals=p[2] or [], type=None, coord=coord)
-		if len(p) > 3:
-			tail_type = p[3]
-			while tail_type.type is not None:
-				tail_type = tail_type.type
-			tail_type.type = nested_type
-			p[0] = p[3]
-		else:
-			p[0] = nested_type
+	# def p_pointer(self, p):
+	# 	""" pointer : TIMES type_qualifier_list_opt
+	# 				| TIMES type_qualifier_list_opt pointer
+	# 	"""
+	# 	coord = self._token_coord(p, 1)
+	# 	# Pointer decls nest from inside out. This is important when different
+	# 	# levels have different qualifiers. For example:
+	# 	#
+	# 	#  char * const * p;
+	# 	#
+	# 	# Means "pointer to const pointer to char"
+	# 	#
+	# 	# While:
+	# 	#
+	# 	#  char ** const p;
+	# 	#
+	# 	# Means "const pointer to pointer to char"
+	# 	#
+	# 	# So when we construct PtrDecl nestings, the leftmost pointer goes in
+	# 	# as the most nested type.
+	# 	nested_type = RustAst.PtrDecl(quals=p[2] or [], type=None, coord=coord)
+	# 	if len(p) > 3:
+	# 		tail_type = p[3]
+	# 		while tail_type.type is not None:
+	# 			tail_type = tail_type.type
+	# 		tail_type.type = nested_type
+	# 		p[0] = p[3]
+	# 	else:
+	# 		p[0] = nested_type
 
 	def p_type_qualifier_list(self, p):
 		""" type_qualifier_list : type_qualifier
-								| type_qualifier_list type_qualifier
 		"""
-		p[0] = [p[1]] if len(p) == 2 else p[1] + [p[2]]
-
-	def p_parameter_type_list(self, p):
-		""" parameter_type_list : parameter_list
-								| parameter_list COMMA ELLIPSIS
-		"""
-		if len(p) > 2:
-			p[1].params.append(RustAst.EllipsisParam(self._token_coord(p, 3)))
-
-		p[0] = p[1]
-
-	def p_parameter_list(self, p):
-		""" parameter_list  : parameter_declaration
-							| parameter_list COMMA parameter_declaration
-		"""
-		if len(p) == 2: # single parameter
-			p[0] = RustAst.ParamList([p[1]], p[1].coord)
+		if len(p) == 2:
+			p[0] = [p[1]]  
 		else:
-			p[1].params.append(p[3])
-			p[0] = p[1]
+			self._parse_error('Error, single qualifiers only.',self._token_coord(p, 1))
+
+
+	# def p_parameter_type_list(self, p):
+	# 	""" parameter_type_list : parameter_list
+	# 							| parameter_list COMMA ELLIPSIS
+	# 	"""
+	# 	if len(p) > 2:
+	# 		p[1].params.append(RustAst.EllipsisParam(self._token_coord(p, 3)))
+
+	# 	p[0] = p[1]
+
+	# def p_parameter_list(self, p):
+	# 	""" parameter_list  : parameter_declaration
+	# 						| parameter_list COMMA parameter_declaration
+	# 	"""
+	# 	if len(p) == 2: # single parameter
+	# 		p[0] = RustAst.ParamList([p[1]], p[1].coord)
+	# 	else:
+	# 		p[1].params.append(p[3])
+	# 		p[0] = p[1]
 
 	# From ISO/IEC 9899:TC2, 6.7.5.3.11:
 	# "If, in a parameter declaration, an identifier can be treated either
@@ -1379,63 +1387,63 @@ class RustParser(PLYParser):
 		""" direct_abstract_declarator  : LPAREN abstract_declarator RPAREN """
 		p[0] = p[2]
 
-	def p_direct_abstract_declarator_2(self, p):
-		""" direct_abstract_declarator  : direct_abstract_declarator LBRACKET assignment_expression_opt RBRACKET
-		"""
-		arr = RustAst.ArrayDecl(
-			type=None,
-			dim=p[3],
-			dim_quals=[],
-			coord=p[1].coord)
+	# def p_direct_abstract_declarator_2(self, p):
+	# 	""" direct_abstract_declarator  : direct_abstract_declarator LBRACKET assignment_expression_opt RBRACKET
+	# 	"""
+	# 	arr = RustAst.ArrayDecl(
+	# 		type=None,
+	# 		dim=p[3],
+	# 		dim_quals=[],
+	# 		coord=p[1].coord)
 
-		p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
+	# 	p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
-	def p_direct_abstract_declarator_3(self, p):
-		""" direct_abstract_declarator  : LBRACKET assignment_expression_opt RBRACKET
-		"""
-		p[0] = RustAst.ArrayDecl(
-			type=RustAst.TypeDecl(None, None, None),
-			dim=p[2],
-			dim_quals=[],
-			coord=self._token_coord(p, 1))
+	# def p_direct_abstract_declarator_3(self, p):
+	# 	""" direct_abstract_declarator  : LBRACKET assignment_expression_opt RBRACKET
+	# 	"""
+	# 	p[0] = RustAst.ArrayDecl(
+	# 		type=RustAst.TypeDecl(None, None, None),
+	# 		dim=p[2],
+	# 		dim_quals=[],
+	# 		coord=self._token_coord(p, 1))
 
-	def p_direct_abstract_declarator_4(self, p):
-		""" direct_abstract_declarator  : direct_abstract_declarator LBRACKET TIMES RBRACKET
-		"""
-		arr = RustAst.ArrayDecl(
-			type=None,
-			dim=RustAst.ID(p[3], self._token_coord(p, 3)),
-			dim_quals=[],
-			coord=p[1].coord)
+	# def p_direct_abstract_declarator_4(self, p):
+	# 	""" direct_abstract_declarator  : direct_abstract_declarator LBRACKET TIMES RBRACKET
+	# 	"""
+	# 	arr = RustAst.ArrayDecl(
+	# 		type=None,
+	# 		dim=RustAst.ID(p[3], self._token_coord(p, 3)),
+	# 		dim_quals=[],
+	# 		coord=p[1].coord)
 
-		p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
+	# 	p[0] = self._type_modify_decl(decl=p[1], modifier=arr)
 
-	def p_direct_abstract_declarator_5(self, p):
-		""" direct_abstract_declarator  : LBRACKET TIMES RBRACKET
-		"""
-		p[0] = RustAst.ArrayDecl(
-			type=RustAst.TypeDecl(None, None, None),
-			dim=RustAst.ID(p[3], self._token_coord(p, 3)),
-			dim_quals=[],
-			coord=self._token_coord(p, 1))
+	# def p_direct_abstract_declarator_5(self, p):
+	# 	""" direct_abstract_declarator  : LBRACKET TIMES RBRACKET
+	# 	"""
+	# 	p[0] = RustAst.ArrayDecl(
+	# 		type=RustAst.TypeDecl(None, None, None),
+	# 		dim=RustAst.ID(p[3], self._token_coord(p, 3)),
+	# 		dim_quals=[],
+	# 		coord=self._token_coord(p, 1))
 
-	def p_direct_abstract_declarator_6(self, p):
-		""" direct_abstract_declarator  : direct_abstract_declarator LPAREN parameter_type_list_opt RPAREN
-		"""
-		func = RustAst.FuncDecl(
-			args=p[3],
-			type=None,
-			coord=p[1].coord)
+	# def p_direct_abstract_declarator_6(self, p):
+	# 	""" direct_abstract_declarator  : direct_abstract_declarator LPAREN parameter_type_list_opt RPAREN
+	# 	"""
+	# 	func = RustAst.FuncDecl(
+	# 		args=p[3],
+	# 		type=None,
+	# 		coord=p[1].coord)
 
-		p[0] = self._type_modify_decl(decl=p[1], modifier=func)
+	# 	p[0] = self._type_modify_decl(decl=p[1], modifier=func)
 
-	def p_direct_abstract_declarator_7(self, p):
-		""" direct_abstract_declarator  : LPAREN parameter_type_list_opt RPAREN
-		"""
-		p[0] = RustAst.FuncDecl(
-			args=p[2],
-			type=RustAst.TypeDecl(None, None, None),
-			coord=self._token_coord(p, 1))
+	# def p_direct_abstract_declarator_7(self, p):
+	# 	""" direct_abstract_declarator  : LPAREN parameter_type_list_opt RPAREN
+	# 	"""
+	# 	p[0] = RustAst.FuncDecl(
+	# 		args=p[2],
+	# 		type=RustAst.TypeDecl(None, None, None),
+	# 		coord=self._token_coord(p, 1))
 
 	# declaration is a list, statement isn't. To make it consistent, block_item
 	# will always be a list
@@ -1696,7 +1704,6 @@ class RustParser(PLYParser):
 
 	def p_primary_expression_3(self, p):
 		""" primary_expression  : unified_string_literal
-								| unified_wstring_literal
 		"""
 		p[0] = p[1]
 
@@ -1729,13 +1736,12 @@ class RustParser(PLYParser):
 
 	def p_argument_expression_list(self, p):
 		""" argument_expression_list    : assignment_expression
-										| argument_expression_list COMMA assignment_expression
 		"""
 		if len(p) == 2: # single expr
 			p[0] = RustAst.ExprList([p[1]], p[1].coord)
 		else:
-			p[1].exprs.append(p[3])
-			p[0] = p[1]
+			self._parse_error('Error, single expressions only.',self._token_coord(p, 1))
+
 
 	def p_identifier(self, p):
 		""" identifier  : ID """
@@ -1752,17 +1758,14 @@ class RustParser(PLYParser):
 
 	def p_constant_2(self, p):
 		""" constant    : FLOAT_CONST
-						| HEX_FLOAT_CONST
 		"""
 		p[0] = RustAst.Constant(
 			'float', p[1], self._token_coord(p, 1))
 
 	def p_constant_3(self, p):
 		""" constant    : CHAR_CONST
-						| WCHAR_CONST
 		"""
-		p[0] = RustAst.Constant(
-			'char', p[1], self._token_coord(p, 1))
+		p[0] = RustAst.Constant('char', p[1], self._token_coord(p, 1))
 
 	# The "unified" string and wstring literal rules are for supporting
 	# concatenation of adjacent string literals.
@@ -1776,20 +1779,11 @@ class RustParser(PLYParser):
 		if len(p) == 2: # single literal
 			p[0] = RustAst.Constant(
 				'string', p[1], self._token_coord(p, 1))
+		# else:
+		# 	p[1].value = p[1].value[:-1] + p[2][1:]
+		# 	p[0] = p[1]
 		else:
-			p[1].value = p[1].value[:-1] + p[2][1:]
-			p[0] = p[1]
-
-	def p_unified_wstring_literal(self, p):
-		""" unified_wstring_literal : WSTRING_LITERAL
-									| unified_wstring_literal WSTRING_LITERAL
-		"""
-		if len(p) == 2: # single literal
-			p[0] = RustAst.Constant(
-				'string', p[1], self._token_coord(p, 1))
-		else:
-			p[1].value = p[1].value.rstrip()[:-1] + p[2][2:]
-			p[0] = p[1]
+			self._parse_error('Error, single strings only:',self._token_coord(p, 1))
 
 	def p_brace_open(self, p):
 		""" brace_open  :   LBRACE

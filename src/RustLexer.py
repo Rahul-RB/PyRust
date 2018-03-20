@@ -184,7 +184,8 @@ class RustLexer(object):
 		'ELLIPSIS', 'DOTDOT',
 
 		# Others
-		'PATTERNATCHAR'
+		'PATTERNATCHAR',
+		'MAIN'
 		# pre-processor
 		# 'PPHASH',       # '#'
 		# 'PPPRAGMA',     # 'pragma'

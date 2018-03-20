@@ -162,6 +162,49 @@ class NodeVisitor(object):
         for c in node:
             self.visit(c)
 
+class ArrayDecl(Node):
+    __slots__ = ('type', 'dim', 'dim_quals', 'coord', '__weakref__')
+    def __init__(self, type, dim, dim_quals, coord=None):
+        self.type = type
+        self.dim = dim
+        self.dim_quals = dim_quals
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None: nodelist.append(("type", self.type))
+        if self.dim is not None: nodelist.append(("dim", self.dim))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.type is not None:
+            yield self.type
+        if self.dim is not None:
+            yield self.dim
+
+    attr_names = ('dim_quals', )
+
+class ArrayRef(Node):
+    __slots__ = ('name', 'subscript', 'coord', '__weakref__')
+    def __init__(self, name, subscript, coord=None):
+        self.name = name
+        self.subscript = subscript
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.name is not None: nodelist.append(("name", self.name))
+        if self.subscript is not None: nodelist.append(("subscript", self.subscript))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.name is not None:
+            yield self.name
+        if self.subscript is not None:
+            yield self.subscript
+
+    attr_names = ()
+
 class Assignment(Node):
     __slots__ = ('op', 'lvalue', 'rvalue', 'coord', '__weakref__')
     def __init__(self, op, lvalue, rvalue, coord=None):
@@ -217,6 +260,27 @@ class Break(Node):
     def __iter__(self):
         return
         yield
+
+    attr_names = ()
+
+class Cast(Node):
+    __slots__ = ('to_type', 'expr', 'coord', '__weakref__')
+    def __init__(self, to_type, expr, coord=None):
+        self.to_type = to_type
+        self.expr = expr
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.to_type is not None: nodelist.append(("to_type", self.to_type))
+        if self.expr is not None: nodelist.append(("expr", self.expr))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.to_type is not None:
+            yield self.to_type
+        if self.expr is not None:
+            yield self.expr
 
     attr_names = ()
 
@@ -298,6 +362,24 @@ class Defaultcl(Node):
 
     attr_names = ('name', 'quals', 'storage', 'funcspec', )
 
+class DeclList(Node):
+    __slots__ = ('decls', 'coord', '__weakref__')
+    def __init__(self, decls, coord=None):
+        self.decls = decls
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        for i, child in enumerate(self.decls or []):
+            nodelist.append(("decls[%d]" % i, child))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        for child in (self.decls or []):
+            yield child
+
+    attr_names = ()
+
 class EmptyStatement(Node):
     __slots__ = ('coord', '__weakref__')
     def __init__(self, coord=None):
@@ -331,16 +413,67 @@ class ExprList(Node):
     attr_names = ()
 
 class FileAST(Node):
-    __slots__ = ('coord', '__weakref__')
-    def __init__(self, coord=None):
+    __slots__ = ('ext', 'coord', '__weakref__')
+    def __init__(self, ext, coord=None):
+        self.ext = ext
         self.coord = coord
 
     def children(self):
-        return ()
+        nodelist = []
+        for i, child in enumerate(self.ext or []):
+            nodelist.append(("ext[%d]" % i, child))
+        return tuple(nodelist)
 
     def __iter__(self):
-        return
-        yield
+        for child in (self.ext or []):
+            yield child
+
+    attr_names = ()
+
+class FuncDecl(Node):
+    __slots__ = ('args', 'type', 'coord', '__weakref__')
+    def __init__(self, args, type, coord=None):
+        self.args = args
+        self.type = type
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.args is not None: nodelist.append(("args", self.args))
+        if self.type is not None: nodelist.append(("type", self.type))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.args is not None:
+            yield self.args
+        if self.type is not None:
+            yield self.type
+
+    attr_names = ()
+
+class FuncDef(Node):
+    __slots__ = ('decl', 'param_decls', 'body', 'coord', '__weakref__')
+    def __init__(self, decl, param_decls, body, coord=None):
+        self.decl = decl
+        self.param_decls = param_decls
+        self.body = body
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.decl is not None: nodelist.append(("decl", self.decl))
+        if self.body is not None: nodelist.append(("body", self.body))
+        for i, child in enumerate(self.param_decls or []):
+            nodelist.append(("param_decls[%d]" % i, child))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.decl is not None:
+            yield self.decl
+        if self.body is not None:
+            yield self.body
+        for child in (self.param_decls or []):
+            yield child
 
     attr_names = ()
 
@@ -422,6 +555,117 @@ class NamedInitializer(Node):
             yield child
 
     attr_names = ()
+
+class ParamList(Node):
+    __slots__ = ('params', 'coord', '__weakref__')
+    def __init__(self, params, coord=None):
+        self.params = params
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        for i, child in enumerate(self.params or []):
+            nodelist.append(("params[%d]" % i, child))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        for child in (self.params or []):
+            yield child
+
+    attr_names = ()
+
+class Return(Node):
+    __slots__ = ('expr', 'coord', '__weakref__')
+    def __init__(self, expr, coord=None):
+        self.expr = expr
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.expr is not None: nodelist.append(("expr", self.expr))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.expr is not None:
+            yield self.expr
+
+    attr_names = ()
+
+class TypeDecl(Node):
+    __slots__ = ('declname', 'quals', 'type', 'coord', '__weakref__')
+    def __init__(self, declname, quals, type, coord=None):
+        self.declname = declname
+        self.quals = quals
+        self.type = type
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None: nodelist.append(("type", self.type))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.type is not None:
+            yield self.type
+
+    attr_names = ('declname', 'quals', )
+
+class Typedef(Node):
+    __slots__ = ('name', 'quals', 'storage', 'type', 'coord', '__weakref__')
+    def __init__(self, name, quals, storage, type, coord=None):
+        self.name = name
+        self.quals = quals
+        self.storage = storage
+        self.type = type
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None: nodelist.append(("type", self.type))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.type is not None:
+            yield self.type
+
+    attr_names = ('name', 'quals', 'storage', )
+
+class Typename(Node):
+    __slots__ = ('name', 'quals', 'type', 'coord', '__weakref__')
+    def __init__(self, name, quals, type, coord=None):
+        self.name = name
+        self.quals = quals
+        self.type = type
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.type is not None: nodelist.append(("type", self.type))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.type is not None:
+            yield self.type
+
+    attr_names = ('name', 'quals', )
+
+class UnaryOp(Node):
+    __slots__ = ('op', 'expr', 'coord', '__weakref__')
+    def __init__(self, op, expr, coord=None):
+        self.op = op
+        self.expr = expr
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.expr is not None: nodelist.append(("expr", self.expr))
+        return tuple(nodelist)
+
+    def __iter__(self):
+        if self.expr is not None:
+            yield self.expr
+
+    attr_names = ('op', )
 
 class While(Node):
     __slots__ = ('cond', 'stmt', 'coord', '__weakref__')

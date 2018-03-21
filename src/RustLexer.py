@@ -5,6 +5,7 @@
 #------------------------------------------------------------------------------
 import re
 import sys
+import SymbolTable
 
 from ply import lex
 from ply.lex import TOKEN

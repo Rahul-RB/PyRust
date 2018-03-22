@@ -4,3 +4,5 @@
 /rust-grammar.y
 /src/__pycache__
 /Grammar.pdf
+lextab.py
+yacctab.py

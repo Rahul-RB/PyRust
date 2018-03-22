@@ -121,7 +121,6 @@ class RustLexer(object):
 		"OUTER_DOC_COMMENT", "SHEBANG",  "SHEBANG_LINE",  "STATIC_LIFETIME",
 		"U8","U16","U32","U64"	
 		)
-
 	keywordMap = {}
 	for keyword in keywords:
 		keywordMap[keyword.lower()] = keyword

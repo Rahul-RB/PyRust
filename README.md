@@ -1,4 +1,6 @@
 # PyRust
+# SOME BASIC GRAMMAR IS WORKING, SYM TABLE NOTCOMPLETED.
+# COMEPLTED TILL AKHIL IN LAB YSETREDAY
 ## A tool written in PLY for parsing Rust language.
 
 ## Prerequisites:

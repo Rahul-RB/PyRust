@@ -111,14 +111,15 @@ class RustLexer(object):
 	keywords = (
 		"SELF","STATIC",  "ABSTRACT",  "ALIGNOF",  "AS",  "BECOME",  
 		"BREAK",  "CATCH",  "CRATE",  "DEFAULT",  "DO",  "ELSE",  
-		"ENUM",  "EXTERN",  "FALSE",  "FINAL",  "FN",  "FOR",  "IF",  
-		"IMPL",  "IN",  "LET",  "LOOP",  "MACRO",  "MATCH",  "MOD",  
-		"MOVE",  "MUT",  "OFFSETOF",  "OVERRIDE",  "PRIV",  "PUB",  
+		"ENUM",  "EXTERN",  "FALSE",  "FINAL",  "FN",  "FOR", "I8","I16", 
+		"I32", "I64", "IF", "IMPL",  "IN",  "LET",  "LOOP",  "MACRO", "MAIN",
+		"MATCH", "MOD", "MOVE",  "MUT",  "OFFSETOF",  "OVERRIDE",  "PRIV",  "PUB",  
 		"PURE",  "REF",  "RETURN",  "SIZEOF",  "STRUCT",  "SUPER",  
 		"UNION",  "TRUE",  "TRAIT",  "TYPE",  "UNSAFE",  "UNSIZED",  
 		"USE",  "VIRTUAL",  "WHILE",  "YIELD",  "CONTINUE",  "PROC",  
 		"BOX",  "CONST",  "WHERE",  "TYPEOF",  "INNER_DOC_COMMENT",  
-		"OUTER_DOC_COMMENT", "SHEBANG",  "SHEBANG_LINE",  "STATIC_LIFETIME"	
+		"OUTER_DOC_COMMENT", "SHEBANG",  "SHEBANG_LINE",  "STATIC_LIFETIME",
+		"U8","U16","U32","U64"	
 		)
 
 	keywordMap = {}
@@ -131,10 +132,6 @@ class RustLexer(object):
 	tokens = keywords + (
 		# Identifiers
 		'ID',
-
-		# MAIN FUNCTION FOR NOW
-		'MAIN',
-
 		# Type identifiers (identifiers previously defined as
 		# types with typedef)
 		'TYPEID',
@@ -266,6 +263,8 @@ class RustLexer(object):
 		r'\n+'
 		t.lexer.lineno += t.value.count("\n")
 
+
+	# t_MAIN				= r'main'
 	# Operators
 	t_PLUS              = r'\+'
 	t_MINUS             = r'-'
@@ -291,7 +290,7 @@ class RustLexer(object):
 	t_EQUALS            = r'='
 	t_TIMESEQUAL        = r'\*='
 	t_DIVEQUAL          = r'/='
-	t_MODULUSEQUAL          = r'%='
+	t_MODULUSEQUAL      = r'%='
 	t_PLUSEQUAL         = r'\+='
 	t_MINUSEQUAL        = r'-='
 	t_LSHIFTEQUAL       = r'<<='

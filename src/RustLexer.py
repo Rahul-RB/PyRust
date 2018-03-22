@@ -41,14 +41,8 @@ class RustLexer(object):
 		self.typeLookupFunc = typeLookupFunc
 		self.fileName = ''
 
-		# Counter for Statistics
-		# self.commentCount = Statistics(counterName='commentCounter')
-		# self.newlineCount = Statistics(counterName='newlineCounter')
-		# self.identifierCount = Statistics(counterName='identifierCounter')
-		# self.keywordCount = Statistics(counterName='keywordCounter')
-
-
-
+		# Symbol Table
+		# self.symbolTable = SymbolTable()
 		# Keeps track of the last token returned from self.token()
 		self.lastToken = None
 
@@ -109,6 +103,8 @@ class RustLexer(object):
 	def _make_tok_location(self, token):
 		return (token.lineno, self.find_tok_column(token))
 
+	def _get_keywords(self):
+		return keywords
 	##
 	## Reserved keywords
 	##
@@ -135,6 +131,9 @@ class RustLexer(object):
 	tokens = keywords + (
 		# Identifiers
 		'ID',
+
+		# MAIN FUNCTION FOR NOW
+		'MAIN',
 
 		# Type identifiers (identifiers previously defined as
 		# types with typedef)
@@ -186,7 +185,6 @@ class RustLexer(object):
 
 		# Others
 		'PATTERNATCHAR',
-		'MAIN'
 		# pre-processor
 		# 'PPHASH',       # '#'
 		# 'PPPRAGMA',     # 'pragma'

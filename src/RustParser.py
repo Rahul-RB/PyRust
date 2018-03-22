@@ -8,6 +8,7 @@ import re
 
 from ply import yacc
 
+import SymbolTable
 import RustAst
 from RustLexer import RustLexer
 from plyparser import PLYParser, Coord, ParseError, parameterized, template
@@ -1538,16 +1539,17 @@ class RustParser(PLYParser):
 
 	def p_expression(self, p):
 		""" expression  : assignment_expression
-						| expression COMMA assignment_expression
 		"""
 		if len(p) == 2:
 			p[0] = p[1]
 		else:
-			if not isinstance(p[1], RustAst.ExprList):
-				p[1] = RustAst.ExprList([p[1]], p[1].coord)
+			# if not isinstance(p[1], RustAst.ExprList):
+			# 	p[1] = RustAst.ExprList([p[1]], p[1].coord)
 
-			p[1].exprs.append(p[3])
-			p[0] = p[1]
+			# p[1].exprs.append(p[3])
+			# p[0] = p[1]
+			self._parse_error('Error, single expressions only.',self._token_coord(p, 1))
+			
 
 	def p_typedef_name(self, p):
 		""" typedef_name : TYPEID """

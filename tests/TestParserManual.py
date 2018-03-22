@@ -18,3 +18,6 @@ except EOFError:
 	exit()
 result = parser.parse(s)
 print(result)
+
+
+			# self._parse_error('Error, single expressions only.',self._token_coord(p, 1))

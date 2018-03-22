@@ -16,4 +16,4 @@ class SymbolTable(object):
 	def printSymbolTable(self):
 		for scope in list(reversed(symbolTable)):
 			for symName,attributes in scope:
-				print()
+				print(symName,"\t",attributes)

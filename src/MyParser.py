@@ -243,33 +243,29 @@ class RustParser(PLYParser):
             compoundStmt : lbrace stmt_list rbrace 
                          
         """ 
-        # self.symbolTable.append({})
-        print("p_compoundStmt: ", list(p))
-        print(self.symbolTable[1:])
         pass
 
     def p_lbrace(self, p):
         """
             lbrace : LBRACE
         """
+        print("\nNew scope...")
         self.symbolTable.append({})
-        print("p_lbrace",list(p), self.symbolTable[-1:])
-        p[0] = p[1]
 
     def p_rbrace(self, p):
         """
             rbrace : RBRACE
         """
+        print("\nPopping:", self.symbolTable[-1])
+        print("Symbol Table: ", self.symbolTable)
+        # print()
         self.symbolTable = self.symbolTable[:-1]
-        p[0] = p[1]
 
     def p_stmt_list(self, p):
         """ stmt_list : stmt
                       | stmt stmt_list
         """
-        print("p_stmt_list: ", list(p))
-        # p[0] = p[1] if len(p) == 2 else p[1] + p[2]
-        # pass
+        pass
 
     def p_stmt(self,p):
         """
@@ -279,8 +275,6 @@ class RustParser(PLYParser):
                  | compoundStmt
                  | empty
         """
-        print("p_stmt", list(p))
-        p[0] = "stmt"
         pass
 
 
@@ -351,17 +345,8 @@ class RustParser(PLYParser):
             declaration : LET variable COLON dataType EQUALS expression SEMI
                         | LET MUT variable COLON dataType EQUALS expression SEMI
         """
-        print("p_declaration", list(p))
-        # dt = self.symbolTable[-1].get(p[2], None)
-        # if dt == None:
+        print("Adding ", (p[2], p[4]), "to", self.symbolTable[-1])
         self.symbolTable[-1][p[2]] = p[4]
-        # else:
-        #     print("ERROR RE-DECLARATION!")
-        #     exit()
-        print(p[4], type(p[4]))
-        print(self.symbolTable[1:])
-        p[0] = "decl"
-        # self.symbolTable[-1][p[2]] = 888
 
     def p_dataType(self,p):
         """

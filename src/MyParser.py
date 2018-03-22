@@ -260,7 +260,7 @@ class RustParser(PLYParser):
         """
             rbrace : RBRACE
         """
-        self.symbolTable[:-1]
+        self.symbolTable = self.symbolTable[:-1]
         p[0] = p[1]
 
     def p_stmt_list(self, p):

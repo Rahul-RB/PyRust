@@ -41,6 +41,7 @@ m.build(optimize=False)
 m.input("""
 fn main(){
 	let a:i32 = 5;
+	println!();
 }""")
 
 m.test()

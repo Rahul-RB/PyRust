@@ -1,8 +1,7 @@
-/*.pyc
-/*.odt
-/edit-grammar.y
-/rust-grammar.y
+*.pyc
+*.odt
+*.pdf
 /src/__pycache__
-/Grammar.pdf
-lextab.py
-yacctab.py
+/src/lextab.py
+/src/yacctab.py
+/src/RustParser.py

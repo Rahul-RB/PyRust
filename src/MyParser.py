@@ -102,6 +102,7 @@ class RustParser(PLYParser):
 
         # [0] is the global scope
         self.symbolTable = [{ keyword for keyword in self.clex.keywords }]
+        self.globalSymbolTable = {'Keywords':{ keyword for keyword in self.clex.keywords }}
 
         # Keeps track of the last token given to yacc (the lookahead token)
         self._lastYieldedToken = None
@@ -122,6 +123,7 @@ class RustParser(PLYParser):
         self.clex.filename = filename
         self.clex.reset_lineno()
         # if self.symbolTable == None
+        self.scopeNumber = 0
         self._lastYieldedToken = None
         return self.rustParser.parse(
                 input=text,
@@ -149,7 +151,7 @@ class RustParser(PLYParser):
         # self.symbolTable[-1][name] = True
 
     def _addIdentifier(self, name, coord):
-        """ Add a new object, function, or enum member name (ie an ID) to the
+        """ Add a new object, function, or enum member name (ie an variable) to the
             current scope
         """
         if self.symbolTable[-1].get(name, False):
@@ -235,6 +237,7 @@ class RustParser(PLYParser):
         # self.symbolTable[-1]['FN']=None
         # self.symbolTable[-1]['MAIN']=None
         # pprint(self.symbolTable)
+        pprint(self.globalSymbolTable,width=1)
         pass
     
     def p_compoundStmt(self,p):
@@ -248,16 +251,17 @@ class RustParser(PLYParser):
         """
             lbrace : LBRACE
         """
-        print("\nNew scope...")
+        # print("\nNew scope...")
         self.symbolTable.append({})
 
     def p_rbrace(self, p):
         """
             rbrace : RBRACE
         """
-        print("\nPopping:", self.symbolTable[-1])
-        print("Symbol Table: ", self.symbolTable)
-        # print()
+        # print("\nPopping:", self.symbolTable[-1])
+        self.globalSymbolTable['Block '+str(self.scopeNumber)+':'] = self.symbolTable[-1]
+        self.scopeNumber +=1
+        # print("Symbol Table: ", self.symbolTable)
         self.symbolTable = self.symbolTable[:-1]
 
     def p_stmt_list(self, p):
@@ -269,14 +273,32 @@ class RustParser(PLYParser):
     def p_stmt(self,p):
         """
             stmt : declaration
+                 | assignStmt
                  | selectionStmt
                  | iterationStmt
                  | compoundStmt
+                 | predefinedMacroCall
                  | empty
         """
         pass
 
-
+    def p_assignStmt(self,p):
+        """
+            assignStmt : variable EQUALS arithExpr SEMI
+        """
+        # print("*********************ASSIGNEXPR*********************\n",list(p))
+        # print(self.symbolTable)
+        # if(p[1] not in self.symbolTable[-1]):
+        #   self._parse_error('Variable not declared before using',self._token_coord(p, 1))
+        # elif(self.symbolTable[-1][p[1]].startswith("IMMUTABLE")):
+        #   self._parse_error('Variable not of type Mutable to be modified',self._token_coord(p, 1))
+        # print(self.symbolTable[-1][p[1]])
+        # print("*********************ASSIGNEXPR*********************\n")
+    def p_predefinedMacroCall(self,p):
+        """
+            predefinedMacroCall : ID NOT LPAREN 
+        """
+        pass
     def p_selectionStmt(self,p):
         """
             selectionStmt : IF conditionStmt compoundStmt
@@ -317,7 +339,7 @@ class RustParser(PLYParser):
 
     def p_logicalExpr(self,p):
         """
-            logicalExpr : arithExpr relationalOp arithExpr
+            logicalExpr : arithExpr logicalOp arithExpr
         """ 
         pass
 
@@ -339,14 +361,22 @@ class RustParser(PLYParser):
         """
         pass
 
-    def p_declaration(self,p):
+    def p_declaration_1(self,p):
         """
-            declaration : LET variable COLON dataType EQUALS expression SEMI
-                        | LET MUT variable COLON dataType EQUALS expression SEMI
+            declaration : LET ID COLON dataType EQUALS expression SEMI
         """
-        print("Adding ", (p[2], p[4]), "to", self.symbolTable[-1])
-        self.symbolTable[-1][p[2]] = p[4]
+        # print("Adding ", (p[2], "IMMUTABLE;"+p[4]), "to", self.symbolTable[-1])
+        # print("Adding ", (p[2], "IMMUTABLE;"+p[4]))
+        self.symbolTable[-1][p[2]] = "IMMUTABLE;"+p[4]
 
+    def p_declaration_2(self,p):
+        """
+            declaration : LET MUT ID COLON dataType EQUALS expression SEMI
+        """
+        # print("Adding ", (p[3], "MUTABLE;"+p[5]), "to", self.symbolTable[-1])
+        # print("Adding ", (p[3], "MUTABLE;"+p[5]))
+        self.symbolTable[-1][p[3]] = "MUTABLE;"+p[5]
+    
     def p_dataType(self,p):
         """
             dataType : I8
@@ -367,8 +397,16 @@ class RustParser(PLYParser):
         """
             variable : ID
         """
-        p[0] = p[1]
-        # print(list(p))
+        for scope in list(reversed(self.symbolTable)):
+            if not isinstance(scope,set):
+                if(p[1] in scope):
+                    if(scope[p[1]].startswith("IMMUTABLE")):
+                        self._parse_error('Variable not of type Mutable to be modified',self._token_coord(p, 1))
+                    else:
+                        p[0] = p[1]
+                        break
+            else:
+                self._parse_error('Variable used before declaration',self._token_coord(p, 1))
 
     def p_arithExpr(self,p):
         """
@@ -388,10 +426,16 @@ class RustParser(PLYParser):
 
     def p_arithExpr3(self,p):
         """
-            arithExpr3 : ID
-                       | number
+            arithExpr3 : variable
                        | LPAREN arithExpr RPAREN
                        | unaryOperation
+                       | arithExpr4
+        """
+        pass
+    
+    def p_arithExpr4(self,p):
+        """
+            arithExpr4 : number
         """
         pass
 
@@ -407,9 +451,9 @@ class RustParser(PLYParser):
         pass
     def p_unaryOperation(self,p):
         """
-            unaryOperation : ID unaryOperator ID
-                           | ID unaryOperator number
-                           | ID unaryOperator LPAREN arithExpr RPAREN
+            unaryOperation : variable unaryOperator variable
+                           | variable unaryOperator number
+                           | variable unaryOperator LPAREN arithExpr RPAREN
         """
         pass
 
@@ -427,6 +471,7 @@ class RustParser(PLYParser):
                           | XOREQUAL
         """
         pass
+
     def p_empty(self, p):
         'empty : '
         p[0] = None

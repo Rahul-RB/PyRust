@@ -101,8 +101,7 @@ class RustParser(PLYParser):
         # This is a per scope Symbol Table
 
         # [0] is the global scope
-        self.symbolTable = [{ keyword:"KEYWORD" for keyword in self.clex.keywords }]
-        print(self.symbolTable)
+        self.symbolTable = [{ keyword for keyword in self.clex.keywords }]
 
         # Keeps track of the last token given to yacc (the lookahead token)
         self._lastYieldedToken = None

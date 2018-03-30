@@ -11,7 +11,6 @@
 import pprint
 from string import Template
 
-
 class ASTCodeGenerator(object):
     def __init__(self, cfg_filename='_rust_ast.cfg'):
         """ Initialize the code generator from a configuration
@@ -52,7 +51,6 @@ class ASTCodeGenerator(object):
                 val = line[lbracket_i + 1:rbracket_i]
                 vallist = [v.strip() for v in val.split(',')] if val else []
                 yield name, vallist
-
 
 class NodeCfg(object):
     """ Node configuration.

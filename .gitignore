@@ -1,8 +1,8 @@
-/*.pyc
-/*.odt
-/edit-grammar.y
-/rust-grammar.y
-/src/__pycache__
-/Grammar.pdf
-lextab.py
-yacctab.py
+*.pyc
+*.odt
+*.pdf
+
+# Match the following in any subdirectory.
+**/__pycache__/
+**/RustAst.py
+**/parsetab.py

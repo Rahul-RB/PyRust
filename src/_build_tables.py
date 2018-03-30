@@ -1,31 +1,22 @@
-#-----------------------------------------------------------------
-# pycparser: _build_tables.py
-#
-# A dummy for generating the lexing/parsing tables and and
-# compiling them into .pyc for faster execution in optimized mode.
-# Also generates AST code from the configuration file.
-# Should be called from the pycparser directory.
-#
-#-----------------------------------------------------------------
+#!/usr/bin/env python3
 
-# Generate c_ast.py
-from _ast_gen import ASTCodeGenerator
-ast_gen = ASTCodeGenerator('_rust_ast.cfg')
-ast_gen.generate(open('RustAst.py', 'w'))
+# Generates AST code from the configuration file.
 
 import sys
-sys.path[0:0] = ['.', '..']
-from pycparser import RustParser
+from os import path
 
-# Generates the tables
-#
-c_parser.CParser(
-    lex_optimize=True,
-    yacc_debug=False,
-    yacc_optimize=True)
+scriptPath = path.dirname(path.realpath(__file__))
 
-# Load to compile into .pyc
-#
-import lextab
-import yacctab
-import c_ast
+# Generate RustAst.py
+from _ast_gen import ASTCodeGenerator
+
+cfgPath = path.join(scriptPath, "_rust_ast.cfg")
+ast_gen = ASTCodeGenerator(cfgPath)
+
+rastPath = path.join(scriptPath, "RustAst.py")
+
+print("GENERATED  %s" % rastPath)
+
+ast_gen.generate(open(rastPath, 'w'))
+
+# Not generating tables as optimize = False

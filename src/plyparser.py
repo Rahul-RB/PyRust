@@ -4,7 +4,11 @@
 # PLYParser class and other utilites for simplifying programming
 # parsers with PLY
 #
+# Eli Bendersky [http://eli.thegreenplace.net]
+# License: BSD
 #-----------------------------------------------------------------
+
+# TODO: Try to eliminate this file.
 
 import warnings
 

@@ -1,5 +1,3 @@
-# import sys
-# sys.path.insert(0, '../src/')
 import RustLexer
 from RustLexer import RustLexer
 
@@ -12,7 +10,7 @@ def tokenTypes(clex):
 	return [i.type for i in tokenList(clex)]
 
 def errorFunc(msg, line, column):
-	fail(msg)
+	print(msg,line,column,sep='\n')
 
 def onLbraceFunc():
 	pass
@@ -45,5 +43,3 @@ fn main(){
 }""")
 
 m.test()
-# print("Tokens being generated:")
-# print(tokenTypes(m))

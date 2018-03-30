@@ -14,7 +14,7 @@ fn main(){
                     {
                         {
                             if condition {
-                                let mut adsf:i32=10;
+                                let adsf:i32=10;
                                 adsf=20;
                                 while adsf==1 {
                                     // unimplemented!();
@@ -24,6 +24,8 @@ fn main(){
                     }
                 }
             }
+            /*this is a multi line comment*/
+
             let mut b1:i32 = 69;
             let mut b2:i32 = 69;
             let mut b3:i32 = 69;

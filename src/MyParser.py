@@ -2,11 +2,19 @@ import re
 
 from ply import yacc
 
-import RustAst
+# import RustAst
 from pprint import pprint
 from RustLexer import RustLexer
+from tabulate import tabulate
 # from RustLexer import keywords
 from plyparser import PLYParser, Coord, ParseError, parameterized, template
+
+def printTokens(res):
+	print("Tokens generated : ")
+	finalRes = []
+	for token in res:
+		finalRes.append([token.type,token.value,token.lineno,token.lexpos])
+	print(tabulate(finalRes,headers=["Name","Value","Line Number","Lex Column Position"],tablefmt="fancy_grid"))
 
 @template
 class RustParser(PLYParser):
@@ -89,7 +97,18 @@ class RustParser(PLYParser):
 			optimize=yacc_optimize,
 			tabmodule=yacctab,
 			outputdir=taboutputdir)
+		
+		# After demo, remove the following lines.
+		fp = open("testFile.rs","r")
+		inp = fp.readlines()
+		inp = ''.join(inp)
+		s = inp
 
+		self.clex.input(inp)
+		res = self.clex.test()
+		printTokens(res)
+		# End of Demo
+		
 		# Symbol tables for keeping track of symbols. symbolTable[-1] is
 		# the current (topmost) scope. Each scope is a dictionary that
 		# specifies whether a name is a type. If symbolTable[n][name] is
@@ -151,7 +170,7 @@ class RustParser(PLYParser):
 		# self.symbolTable[-1][name] = True
 
 	def _addIdentifier(self, name, coord):
-		""" Add a new object, function, or enum member name (ie an variable) to the
+		""" Add a new object, function, or enum member name (ie an identifier_1) to the
 			current scope
 		"""
 		if self.symbolTable[-1].get(name, False):
@@ -284,7 +303,7 @@ class RustParser(PLYParser):
 
 	def p_assignStmt(self,p):
 		"""
-			assignStmt : variable EQUALS arithExpr SEMI
+			assignStmt : identifier_1 EQUALS arithExpr SEMI
 		"""
 		# print("*********************ASSIGNEXPR*********************\n",list(p))
 		# print(self.symbolTable)
@@ -296,7 +315,7 @@ class RustParser(PLYParser):
 		# print("*********************ASSIGNEXPR*********************\n")
 	def p_predefinedMacroCall(self,p):
 		"""
-			predefinedMacroCall : ID NOT LPAREN 
+			predefinedMacroCall : ID NOT LPAREN RPAREN
 		"""
 		pass
 	def p_selectionStmt(self,p):
@@ -393,9 +412,9 @@ class RustParser(PLYParser):
 		# self.symbolTable[-1][]
 		pass
 
-	def p_variable(self,p):
+	def p_identifier_1(self,p):
 		"""
-			variable : ID
+			identifier_1 : ID
 		"""
 		for scope in list(reversed(self.symbolTable)):
 			if not isinstance(scope,set):
@@ -408,6 +427,12 @@ class RustParser(PLYParser):
 			else:
 				self._parse_error('Variable used before declaration',self._token_coord(p, 1))
 
+	def p_identifier_2(self,p):
+		"""
+			identifier_2 : ID
+		"""	
+		
+		pass
 	def p_arithExpr(self,p):
 		"""
 			arithExpr : arithExpr PLUS arithExpr
@@ -426,7 +451,7 @@ class RustParser(PLYParser):
 
 	def p_arithExpr3(self,p):
 		"""
-			arithExpr3 : variable
+			arithExpr3 : identifier_1
 					   | LPAREN arithExpr RPAREN
 					   | unaryOperation
 					   | arithExpr4
@@ -451,9 +476,9 @@ class RustParser(PLYParser):
 		pass
 	def p_unaryOperation(self,p):
 		"""
-			unaryOperation : variable unaryOperator variable
-						   | variable unaryOperator number
-						   | variable unaryOperator LPAREN arithExpr RPAREN
+			unaryOperation : identifier_1 unaryOperator identifier_1
+						   | identifier_1 unaryOperator number
+						   | identifier_1 unaryOperator LPAREN arithExpr RPAREN
 		"""
 		pass
 

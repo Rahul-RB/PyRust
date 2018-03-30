@@ -5,7 +5,6 @@
 #------------------------------------------------------------------------------
 import re
 import sys
-import SymbolTable
 
 from ply import lex
 from ply.lex import TOKEN
@@ -84,17 +83,15 @@ class RustLexer(object):
 
 	def test(self):
 		# self.lexer.input(stripComments(data))
+		result=[]
 		while True:
 			tok = self.lexer.token()
 			if not tok: 
 				break
-			print(tok)
-
+			result.append(tok)
+		return result
 	######################--   PRIVATE   --######################
 
-	##
-	## Internal auxiliary methods
-	##
 	def _error(self, msg, token):
 		location = self._make_tok_location(token)
 		self.errorFunc(msg, location[0], location[1])
@@ -212,7 +209,6 @@ class RustLexer(object):
 	integerSuffixOpt = r'((u8) | (u16) | (u32) | (u64) | (i8) | (i16) | (i32) | (i64))?'
 	floatSuffixOpt = r'((f32) | (f64))?'
 
-	# integer constants (K&R2: A.2.5.1)
 
 	decimalConstant = decDigits+integerSuffixOpt
 	octalConstant = '0o[0-7]*'+integerSuffixOpt
@@ -221,7 +217,6 @@ class RustLexer(object):
 	badOctalConstant = '0o[0-7]*[89]'
 
 
-	# character constants (K&R2: A.2.5.2)
 	# Note: a-zA-Z and '.-~^_!=&;,' are allowed as escape chars to support #line
 	# directives with Windows paths as filenames (..\..\dir\file)
 	# For the same reason, decimalEscape allows all digit sequences. We want to
@@ -239,13 +234,11 @@ class RustLexer(object):
 	unmatchedQuote = "('"+cconstChar+"*\\n)|('"+cconstChar+"*$)"
 	badCharConst = r"""('"""+cconstChar+"""[^'\n]+')|('')|('"""+badEscape+r"""[^'\n]*')"""
 
-	# string literals (K&R2: A.2.6)
 	stringChar = r"""([^"\\\n]|"""+escapeSequence+')'
 	rawString = '"'+stringChar+'"'+'|'+'\#'+stringChar+'\#'
 	stringLiteral = '"'+stringChar+'*"'
 	badStringLiteral = '"'+stringChar+'*?'+badEscape+stringChar+'*"'
 
-	# floating constants (K&R2: A.2.5.3)
 	exponentPart = r"""([eE][-+]?[0-9]+)"""
 	fractionalConstant = r"""([0-9]*\.[0-9]+)"""
 	floatingConstant = '(((('+fractionalConstant+')'+exponentPart+'?)|([0-9]+'+exponentPart+'))+'+floatSuffixOpt+')'

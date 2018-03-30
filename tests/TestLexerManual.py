@@ -1,60 +1,42 @@
-import sys
-sys.path.insert(0, '../src/')
+#!/usr/bin/env python3
 
-import RustLexer
+import sys
+from os import path
+from tabulate import tabulate
+
+scriptPath = path.dirname(path.realpath(__file__))
+sys.path.append(path.join(scriptPath, "..", "src"))
+
 from RustLexer import RustLexer
 
-
 def tokenList(clex):
-	return list(iter(clex.token, None))
-
+    return list(iter(clex.token, None))
 
 def tokenTypes(clex):
-	return [i.type for i in tokenList(clex)]
+    return [i for i in tokenList(clex)]
 
 def errorFunc(msg, line, column):
-	fail(msg)
+    print("ERROR:", msg)
 
-def onLbraceFunc():
-	pass
-
-def onRbraceFunc():
-	pass
-
-def typeLookupFunc(typ):
-	if typ.startswith('mytype'):
-		return True
-	else:
-		return False
-
-# def test(obj,data):
-# 	obj.lexer.input(data)
-# 	while True:
-# 		tok = obj.lexer.token()
-# 		if not tok: 
-# 			break
-# 		print(tok)
-
-m = RustLexer(errorFunc,onLbraceFunc,onRbraceFunc,typeLookupFunc)
+m = RustLexer(errorFunc)
 m.build(optimize=False)
-# m.build()
 
-m.input("""
-	fn main() {
-	//this is a comment
-	println!("Hello World!");
-	/*
-		this is one type of commetn
-	*/
-	panic!("asdfasdf");
-	/* ** */
-	/**/ 
-	/*//*/ 
-	////
-	/// This is a doc comment type 1 	
-	//! This is a doc comment type 2 
+m.input(r"""
+fn main()
+{
+    //this is a comment
+    let y: char = 'k';
+    /*
+        this is one type of commetn
+    */
+    /* ** */
+    /**/ 
+    /*//*/ 
+    ////
+    /// This is a doc comment type 1    
+    //! This is a doc comment type 2
+
 }""")
 
-m.test()
-print("Tokens being generated:")
-print(tokenTypes(m))
+print("Generated Tokens:")
+print(tabulate(map(lambda tok: [tok.type,tok.value], tokenTypes(m)), headers=["TYPE", "VALUE"], tablefmt="orgtbl"))

@@ -4,5 +4,5 @@
 
 # Match the following in any subdirectory.
 **/__pycache__/
-**/RustAst.py
+**/RustAST.py
 **/parsetab.py

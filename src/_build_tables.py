@@ -7,13 +7,13 @@ from os import path
 
 scriptPath = path.dirname(path.realpath(__file__))
 
-# Generate RustAst.py
+# Generate RustAST.py
 from _ast_gen import ASTCodeGenerator
 
 cfgPath = path.join(scriptPath, "_rust_ast.cfg")
 ast_gen = ASTCodeGenerator(cfgPath)
 
-rastPath = path.join(scriptPath, "RustAst.py")
+rastPath = path.join(scriptPath, "RustAST.py")
 
 print("GENERATED  %s" % rastPath)
 

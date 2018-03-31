@@ -79,7 +79,10 @@ class RustLexer(object):
         "MUT", "LET",
         "IF", "ELSE",
         "WHILE",
-        "U8","U16","U32","U64", "I8","I16", "I32", "I64", "CHAR", "BOOL"
+        "U8","U16","U32","U64", "I8","I16", "I32", "I64",
+        "F32", "F64",
+        "CHAR",
+        "BOOL"
         )
 
     keywordMap = {}

@@ -9,7 +9,7 @@ sys.path.append(path.join(scriptPath, "..", "src"))
 import RustParser
 
 parser = RustParser.RustParser()
-fp = open(path.join(scriptPath, "testFile.rs"), "r")
-inp = fp.read()
-print("Input Rust Program:\n", inp)
-result = parser.parse(inp)
+
+rustFilePath = path.join(scriptPath, "testFile.rs")
+
+result = parser.parse(path=rustFilePath)

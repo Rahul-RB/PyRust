@@ -138,6 +138,9 @@ class RustParser(PLYParser):
     #     ('left', 'TIMES', 'DIVIDE')
     # )
 
+    def _getCoord(self, p, i):
+        return self._coord(lineno=p.lineno(i), column=self.clex.find_tok_column(p.lexpos(i)))
+
     def p_start(self, p):
         """ start : FN MAIN LPAREN RPAREN compStmt
         """
@@ -163,8 +166,11 @@ class RustParser(PLYParser):
         """ declStmt : LET ID COLON type EQUALS expr SEMI
                      | LET MUT ID COLON type EQUALS expr SEMI
         """
-        print("Adding ", (p[2], p[4]), "to", self.symbolTable[-1])
-        self.symbolTable[-1][p[2]] = p[4]
+        mut, typ, ide = (True, p[5], p[3]) if len(p) == 9 else (False, p[4], p[2])
+        print("Adding ", (ide, mut, typ), "to", self.symbolTable[-1])
+        self.symbolTable[-1][ide] = {
+            "mut": mut,
+            "type": typ}
 
     def p_selStmt(self, p):
         """ selStmt : IF expr compStmt
@@ -186,11 +192,21 @@ class RustParser(PLYParser):
     def p_assignStmt(self, p):
         """ assignStmt : ID EQUALS expr SEMI
         """
+        isDecl = False
+        isMut = None
         for scope in reversed(self.symbolTable):
-            # print(scope, p[1] in scope)
             if p[1] in scope:
-                return
-        self._parse_error("Variable %s is not declared!" % p[1], self._coord(lineno=p.lineno(1), column=self.clex.find_tok_column(p.lexpos(1))))
+                isDecl = True
+                isMut = scope[p[1]]["mut"]
+                break
+
+        if not isDecl:
+            self._parse_error("Variable %s is not declared!" % p[1], self._getCoord(p, 1))
+
+        if not isMut:
+            self._parse_error("Variable %s is not mutable!" % p[1], self._getCoord(p, 1))
+
+
 
     def p_lbrace(self, p):
         """ lbrace : LBRACE

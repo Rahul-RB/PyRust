@@ -1,9 +1,11 @@
 fn main(){
     let a:i32 = 99;
     let c:i16 = 99;
+    let isNotBool:bool = true;
     while condition {
         let b:i32 = 69;
         let d:i64 = 69;
+        let isBool:bool = false;
         {
             let b1:i32 = 69;
             let b2:i32 = 69;

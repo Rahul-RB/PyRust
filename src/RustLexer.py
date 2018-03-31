@@ -79,7 +79,7 @@ class RustLexer(object):
         "MUT", "LET",
         "IF", "ELSE",
         "WHILE",
-        "U8","U16","U32","U64", "I8","I16", "I32", "I64", "CHAR"
+        "U8","U16","U32","U64", "I8","I16", "I32", "I64", "CHAR", "BOOL"
         )
 
     keywordMap = {}
@@ -95,6 +95,7 @@ class RustLexer(object):
         'INT_CONST_DEC',
         'FLOAT_CONST',
         'CHAR_CONST',
+        'BOOL_CONST',
 
         # Operators
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULUS',
@@ -137,8 +138,7 @@ class RustLexer(object):
     fractionalConstant = r"""([0-9]*\.[0-9]+)"""
     floatingConstant = '(((('+fractionalConstant+')'+exponentPart+'?)|([0-9]+'+exponentPart+'))+'+floatSuffixOpt+')'
 
-    # TODO: boolean literals
-    booleanConstant = r"""['true'|'false']"""
+    boolConstant = r"(true)|(false)"
 
     t_ignore = ' \t'
 
@@ -199,6 +199,10 @@ class RustLexer(object):
 
     @TOKEN(decimalConstant)
     def t_INT_CONST_DEC(self, t):
+        return t
+
+    @TOKEN(boolConstant)
+    def t_BOOL_CONST(self, t):
         return t
 
     # Must come before badCharConst, to prevent it from

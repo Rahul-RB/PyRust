@@ -144,13 +144,19 @@ class RustParser(PLYParser):
     def p_start(self, p):
         """ start : FN MAIN LPAREN RPAREN compStmt
         """
-        pass
+        fileAST = RustAST.FileAST(ext=[p[5]])
+        fileAST.show()
+        p[0] = fileAST
 
     def p_stmtList(self, p):
-        """ stmtList : stmt
-                     | stmt stmtList
+        """ stmtList : stmtList stmt
+                     | stmt
         """
-        pass
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1]
+            p[0].append(p[2])
 
     def p_stmt(self, p):
         """ stmt : declStmt
@@ -160,34 +166,48 @@ class RustParser(PLYParser):
                  | assignStmt
                  | empty
         """
-        pass
+        p[0] = p[1]
 
     def p_declStmt(self, p):
         """ declStmt : LET ID COLON type EQUALS expr SEMI
                      | LET MUT ID COLON type EQUALS expr SEMI
         """
-        mut, typ, ide = (True, p[5], p[3]) if len(p) == 9 else (False, p[4], p[2])
+        mut, typ, ide, expr = (True, p[5], p[3], p[7]) if len(p) == 9 else (False, p[4], p[2], p[6])
         print("Adding ", (ide, mut, typ), "to", self.symbolTable[-1])
-        self.symbolTable[-1][ide] = {
+
+        entry = {
             "mut": mut,
-            "type": typ}
+            "type": typ
+        }
+
+        self.symbolTable[-1][ide] = entry
+
+        p[0] = RustAST.Declaration(entry,
+                                   RustAST.Assignment("=", RustAST.ID(ide), expr))
 
     def p_selStmt(self, p):
         """ selStmt : IF expr compStmt
                     | IF expr compStmt ELSE compStmt
         """
-        pass
+        ifExpr = p[2]
+        ifTrueBlock = p[3]
+        ifFalseBlock = None
+
+        if len(p) == 6:
+            ifFalseBlock = p[5]
+
+        p[0] = RustAST.If(ifExpr, ifTrueBlock, ifFalseBlock)
 
     def p_iterStmt(self, p):
         """ iterStmt : WHILE expr compStmt
         """
-        pass
-
+        p[0] = RustAST.While(p[2], p[3])
 
     def p_compStmt(self, p):
         """ compStmt : lbrace stmtList rbrace
         """
-        pass
+        # print("p_compStmt:", p[2])
+        p[0] = RustAST.Compound(block_items=p[2])
 
     def p_assignStmt(self, p):
         """ assignStmt : ID EQUALS expr SEMI
@@ -206,7 +226,7 @@ class RustParser(PLYParser):
         if not isMut:
             self._parse_error("Variable %s is not mutable!" % p[1], self._getCoord(p, 1))
 
-
+        p[0] = RustAST.Assignment("=", RustAST.ID(p[1]), p[3])
 
     def p_lbrace(self, p):
         """ lbrace : LBRACE
@@ -238,6 +258,8 @@ class RustParser(PLYParser):
                      | U16
                      | U32
                      | U64
+                     | F32
+                     | F64
                      | BOOL
                      | CHAR
         """
@@ -250,47 +272,65 @@ class RustParser(PLYParser):
                  | binopExpr
                  | LPAREN expr RPAREN
         """
-        if len(p)==2 and p.slice[1].type=="ID":
-            isDecl = False
-            for scope in reversed(self.symbolTable):
-                if p[1] in scope:
-                    isDecl = True
-                    break
+        p1Obj = None
+        if len(p) == 2:
+            if p.slice[1].type == "ID":
+                isDecl = False
+                for scope in reversed(self.symbolTable):
+                    if p[1] in scope:
+                        isDecl = True
+                        break
 
-            if not isDecl:
-                self._parse_error("Variable %s is not declared!" % p[1], self._getCoord(p, 1))
+                if not isDecl:
+                    self._parse_error("Variable %s is not declared!" % p[1], self._getCoord(p, 1))
 
+                p1Obj = RustAST.ID(p[1])
+            else:
+                p1Obj = p[1]
+        else:
+            p1Obj = p[2]
+        p[0] = p1Obj
+
+    typeMap = {
+        "CHAR_CONST": "char",
+        "FLOAT_CONST": "f64",
+        "INT_CONST_DEC": "i64",
+        "BOOL_CONST": "bool"
+    }
     def p_literal(self, p):
         """ literal : CHAR_CONST
                     | FLOAT_CONST
                     | INT_CONST_DEC
                     | BOOL_CONST
         """
-        p[0] = p[1]
+        print("p_literal:", p.slice[1].value)
+
+        p1 = p.slice[1]
+        p[0] = RustAST.Constant(self.typeMap[p1.type], p1.value)
 
     def p_unopExpr(self, p):
         """ unopExpr : unop expr
         """
-        pass
+        p[0] = RustAST.UnaryOp(p[1], p[2])
 
     def p_unop(self, p):
         """ unop : PLUS
                  | MINUS
                  | LNOT
         """
-        pass
+        p[0] = p[1]
 
     def p_binopExpr(self, p):
         """ binopExpr : expr binop expr
         """
-        pass
+        p[0] = RustAST.BinaryOp(p[2], p[1], p[3])
 
     def p_binop(self, p):
         """ binop : arithOp
                   | logiOp
                   | relOp
         """
-        pass
+        p[0] = p[1]
 
     def p_arithOp(self, p):
         """ arithOp : PLUS
@@ -299,13 +339,13 @@ class RustParser(PLYParser):
                     | DIVIDE
                     | MODULUS
         """
-        pass
+        p[0] = p[1]
 
     def p_logiOp(self, p):
         """ logiOp : LAND
                    | LOR
         """
-        pass
+        p[0] = p[1]
 
     def p_relOp(self, p):
         """ relOp : LT
@@ -315,7 +355,7 @@ class RustParser(PLYParser):
                   | EQ
                   | NE
         """
-        pass
+        p[0] = p[1]
 
 
     def p_empty(self, p):

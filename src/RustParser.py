@@ -250,7 +250,15 @@ class RustParser(PLYParser):
                  | binopExpr
                  | LPAREN expr RPAREN
         """
-        pass
+        if len(p)==2 and p.slice[1].type=="ID":
+            isDecl = False
+            for scope in reversed(self.symbolTable):
+                if p[1] in scope:
+                    isDecl = True
+                    break
+
+            if not isDecl:
+                self._parse_error("Variable %s is not declared!" % p[1], self._getCoord(p, 1))
 
     def p_literal(self, p):
         """ literal : CHAR_CONST
@@ -258,7 +266,7 @@ class RustParser(PLYParser):
                     | INT_CONST_DEC
                     | BOOL_CONST
         """
-        pass
+        p[0] = p[1]
 
     def p_unopExpr(self, p):
         """ unopExpr : unop expr

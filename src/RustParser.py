@@ -9,7 +9,7 @@ from RustLexer import RustLexer
 from plyparser import PLYParser, Coord, ParseError, parameterized, template
 
 # Generated project files
-import RustAst
+import RustAST
 
 @template
 class RustParser(PLYParser):

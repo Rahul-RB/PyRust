@@ -5,7 +5,7 @@
 - [Python - v3.x](https://www.python.org/download/releases/3.0/)
 
 ### Testing:
-- Generate AST Nodes definitions in `./src/RustAst.py`:<br>
+- Generate AST Nodes definitions in `./src/RustAST.py`:<br>
 `$ ./src/_build_tables.py`
 - Run tests:
     - All tests:<br>

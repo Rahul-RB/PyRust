@@ -172,7 +172,7 @@ r'''#-----------------------------------------------------------------
 # run the generator again.
 # ** ** *** ** **
 #
-# pycparser: RustAst.py
+# pycparser: RustAST.py
 #
 # AST Node classes.
 #

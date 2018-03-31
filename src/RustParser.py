@@ -207,7 +207,8 @@ class RustParser(PLYParser):
         pass
 
     def p_logicalExpr(self,p):
-        """ logicalExpr : arithExpr relationalOp arithExpr
+        """ logicalExpr : logicalExpr relationalOp logicalExpr
+                        | BOOL_CONST
         """ 
         pass
 
@@ -243,6 +244,7 @@ class RustParser(PLYParser):
                      | U16
                      | U32
                      | U64
+                     | BOOL
         """
         p[0] = p[1]
 

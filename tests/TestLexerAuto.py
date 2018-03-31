@@ -29,7 +29,7 @@ class TestRustLexerNoErrors(unittest.TestCase):
         self.fail(msg)
 
     def setUp(self):
-        self.clex = RustLexer(self.errorFunc)
+        self.clex = RustLexer("test-lex-auto", self.errorFunc)
         self.clex.build(optimize=False)
 
     def assertTokensTypes(self, string, types):
@@ -134,7 +134,7 @@ class TestRustLexerErrors(unittest.TestCase):
         self.error = msg
 
     def setUp(self):
-        self.clex = RustLexer(self.errorFunc)
+        self.clex = RustLexer("test-lex-auto", self.errorFunc)
         self.clex.build(optimize=False)
         self.error = ""
 

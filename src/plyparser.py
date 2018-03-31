@@ -1,15 +1,3 @@
-#-----------------------------------------------------------------
-# plyparser.py
-#
-# PLYParser class and other utilites for simplifying programming
-# parsers with PLY
-#
-# Eli Bendersky [http://eli.thegreenplace.net]
-# License: BSD
-#-----------------------------------------------------------------
-
-# TODO: Try to eliminate this file.
-
 import warnings
 
 class Coord(object):
@@ -25,9 +13,9 @@ class Coord(object):
         self.column = column
 
     def __str__(self):
-        str = "%s:%s" % (self.file, self.line)
-        if self.column: str += ":%s" % self.column
-        return str
+        str = "%s:(line=%s" % (self.file, self.line)
+        if self.column: str += ", column=%s" % self.column
+        return str+")"
 
 
 class ParseError(Exception): pass
@@ -50,7 +38,7 @@ class PLYParser(object):
 
     def _coord(self, lineno, column=None):
         return Coord(
-                file=self.clex.filename,
+                file=self.clex.fileName,
                 line=lineno,
                 column=column)
 
@@ -66,7 +54,10 @@ class PLYParser(object):
         return self._coord(p.lineno(token_idx), column)
 
     def _parse_error(self, msg, coord):
-        raise ParseError("%s: %s" % (coord, msg))
+        print("\033[1;31mParseError\033[0m at %s -> %s" % (coord, msg))
+        exit()
+        # This causes errors to be ugly.
+        # raise ParseError("%s: %s" % (coord, msg))
 
 
 def parameterized(*params):

@@ -73,7 +73,7 @@ class RustParser(PLYParser):
         """
 
         # NOTE: set lex/yacc optimize to False due to generated files.
-        self.clex = lexer(errorFunc=self._lexErrorFunc)
+        self.clex = lexer(fileName="test-file-name.rs" , errorFunc=self._lexErrorFunc)
 
         self.clex.build(optimize=lex_optimize,
                         lextab=lextab,
@@ -104,8 +104,10 @@ class RustParser(PLYParser):
         # Keeps track of the last token given to yacc (the lookahead token)
         self._lastYieldedToken = None
 
-    def parse(self, text, filename='', debuglevel=0):
-        self.clex.filename = filename
+    def parse(self, path='', debuglevel=0):
+        fp = open(path, "r")
+        text = fp.read()
+        self.clex.fileName = path
         self.clex.reset_lineno()
         self._lastYieldedToken = None
 
@@ -184,7 +186,11 @@ class RustParser(PLYParser):
     def p_assignStmt(self, p):
         """ assignStmt : ID EQUALS expr SEMI
         """
-        pass
+        for scope in reversed(self.symbolTable):
+            # print(scope, p[1] in scope)
+            if p[1] in scope:
+                return
+        self._parse_error("Variable %s is not declared!" % p[1], self._coord(lineno=p.lineno(1), column=self.clex.find_tok_column(p.lexpos(1))))
 
     def p_lbrace(self, p):
         """ lbrace : LBRACE
@@ -197,7 +203,7 @@ class RustParser(PLYParser):
         """
         print("\nPopping:", self.symbolTable[-1])
         print("Symbol Table: ", self.symbolTable)
-        self.symbolTable = self.symbolTable[:-1]
+        self.symbolTable.pop()
 
     def p_type(self, p):
         """ type : dataType

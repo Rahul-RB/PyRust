@@ -12,7 +12,7 @@ class RustLexer(object):
         tokens.
     """
 
-    def __init__(self, errorFunc):
+    def __init__(self, fileName, errorFunc):
         """ Create a new Lexer.
 
             errorFunc:
@@ -23,7 +23,7 @@ class RustLexer(object):
         """
 
         self.errorFunc = errorFunc
-        self.fileName = ''
+        self.fileName = fileName
 
         # Keeps track of the last token returned from self.token()
         self.lastToken = None
@@ -47,11 +47,11 @@ class RustLexer(object):
         self.lastToken = self.lexer.token()
         return self.lastToken
 
-    def find_tok_column(self, token):
+    def find_tok_column(self, lexpos):
         """ Find the column of the token in its line.
         """
-        lastCr = self.lexer.lexdata.rfind('\n', 0, token.lexpos)
-        return token.lexpos - lastCr
+        lastCr = self.lexer.lexdata.rfind('\n', 0, lexpos)
+        return lexpos - lastCr
 
     def test(self):
         # self.lexer.input(stripComments(data))
@@ -68,7 +68,7 @@ class RustLexer(object):
         self.lexer.skip(1)
 
     def _make_tok_location(self, token):
-        return (token.lineno, self.find_tok_column(token))
+        return (token.lineno, self.find_tok_column(token.lexpos))
 
     def _get_keywords(self):
         return keywords

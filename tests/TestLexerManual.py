@@ -18,7 +18,7 @@ def tokenTypes(clex):
 def errorFunc(msg, line, column):
     print("ERROR:", msg)
 
-m = RustLexer(errorFunc)
+m = RustLexer("test-lex-man", errorFunc)
 m.build(optimize=False)
 
 m.input(r"""

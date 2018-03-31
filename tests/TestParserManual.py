@@ -11,4 +11,5 @@ import RustParser
 parser = RustParser.RustParser()
 fp = open(path.join(scriptPath, "testFile.rs"), "r")
 inp = fp.read()
+print("Input Rust Program:\n", inp)
 result = parser.parse(inp)

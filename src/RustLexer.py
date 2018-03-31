@@ -99,18 +99,18 @@ class RustLexer(object):
 
         # Operators
         'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'MODULUS',
-        'LOR', 'LAND',
+        'LOR', 'LAND', 'LNOT',
         'LT', 'LE', 'GT', 'GE', 'EQ', 'NE',
 
         # Assignment
-        'EQUALS', 'TIMESEQUAL', 'DIVEQUAL', 'MODULUSEQUAL',
-        'PLUSEQUAL', 'MINUSEQUAL',
+        'EQUALS',
+        # 'TIMESEQUAL', 'DIVEQUAL', 'MODULUSEQUAL', 'PLUSEQUAL', 'MINUSEQUAL',
 
         # Delimeters
         'LPAREN', 'RPAREN',         # ( )
         'LBRACKET', 'RBRACKET',     # [ ]
         'LBRACE', 'RBRACE',         # { }
-        'COMMA',                    # ,
+        # 'COMMA',                    # ,
         'SEMI', 'COLON',            # ; :
     )
 
@@ -156,6 +156,7 @@ class RustLexer(object):
     t_MODULUS           = r'%'
     t_LOR               = r'\|\|'
     t_LAND              = r'&&'
+    t_LNOT              = r'!'
     t_LT                = r'<'
     t_GT                = r'>'
     t_LE                = r'<='
@@ -165,18 +166,13 @@ class RustLexer(object):
 
     # Assignment operators
     t_EQUALS            = r'='
-    t_TIMESEQUAL        = r'\*='
-    t_DIVEQUAL          = r'/='
-    t_MODULUSEQUAL      = r'%='
 
-    # TODO: implement later
+    # TODO: implement shorthand assignment
+    # t_TIMESEQUAL        = r'\*='
+    # t_DIVEQUAL          = r'/='
+    # t_MODULUSEQUAL      = r'%='
     # t_PLUSEQUAL         = r'\+='
     # t_MINUSEQUAL        = r'-='
-    # t_LSHIFTEQUAL       = r'<<='
-    # t_RSHIFTEQUAL       = r'>>='
-    # t_ANDEQUAL          = r'&='
-    # t_OREQUAL           = r'\|='
-    # t_XOREQUAL          = r'\^='
 
     # Delimeters
     t_LPAREN            = r'\('
@@ -185,7 +181,10 @@ class RustLexer(object):
     t_RBRACE            = r'\}'
     t_LBRACKET          = r'\['
     t_RBRACKET          = r'\]'
-    t_COMMA             = r','
+
+    # TODO: implement array experssions
+    # t_COMMA             = r','
+
     t_SEMI              = r';'
     t_COLON             = r':'
 

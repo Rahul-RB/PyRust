@@ -82,7 +82,7 @@ class RustParser(PLYParser):
         self.tokens = self.clex.tokens
 
         self.rustParser = yacc.yacc(module=self,
-                                    start='crate',
+                                    start='start',
                                     debug=yacc_debug,
                                     optimize=yacc_optimize,
                                     tabmodule=yacctab,
@@ -126,34 +126,72 @@ class RustParser(PLYParser):
     #     """
     #     return self.clex.last_token
 
-    precedence = (
-        ('left', 'LOR'),
-        ('left', 'LAND'),
-        ('left', 'EQ', 'NE'),
-        ('left', 'GT', 'GE', 'LT', 'LE'),
-        ('left', 'PLUS', 'MINUS'),
-        ('left', 'TIMES', 'DIVIDE')
-    )
+    # TODO: Either use this or write better grammar
+    # precedence = (
+    #     ('left', 'LOR'),
+    #     ('left', 'LAND'),
+    #     ('left', 'EQ', 'NE'),
+    #     ('left', 'GT', 'GE', 'LT', 'LE'),
+    #     ('left', 'PLUS', 'MINUS'),
+    #     ('left', 'TIMES', 'DIVIDE')
+    # )
 
-    # This is the start production rule.
-    def p_crate(self,p):
-        """ crate : FN MAIN LPAREN RPAREN compoundStmt
+    def p_start(self, p):
+        """ start : FN MAIN LPAREN RPAREN compStmt
         """
         pass
-    
-    def p_compoundStmt(self,p):
-        """ compoundStmt : lbrace stmt_list rbrace 
-        """ 
+
+    def p_stmtList(self, p):
+        """ stmtList : stmt
+                     | stmt stmtList
+        """
         pass
 
-    # Moved here from the lexer
+    def p_stmt(self, p):
+        """ stmt : declStmt
+                 | selStmt
+                 | iterStmt
+                 | compStmt
+                 | assignStmt
+                 | empty
+        """
+        pass
+
+    def p_declStmt(self, p):
+        """ declStmt : LET ID COLON type EQUALS expr SEMI
+                     | LET MUT ID COLON type EQUALS expr SEMI
+        """
+        print("Adding ", (p[2], p[4]), "to", self.symbolTable[-1])
+        self.symbolTable[-1][p[2]] = p[4]
+
+    def p_selStmt(self, p):
+        """ selStmt : IF expr compStmt
+                    | IF expr compStmt ELSE compStmt
+        """
+        pass
+
+    def p_iterStmt(self, p):
+        """ iterStmt : WHILE expr compStmt
+        """
+        pass
+
+
+    def p_compStmt(self, p):
+        """ compStmt : lbrace stmtList rbrace
+        """
+        pass
+
+    def p_assignStmt(self, p):
+        """ assignStmt : ID EQUALS expr SEMI
+        """
+        pass
+
     def p_lbrace(self, p):
         """ lbrace : LBRACE
         """
         print("\nNew scope...")
         self.symbolTable.append({})
 
-    # Moved here from the lexer
     def p_rbrace(self, p):
         """ rbrace : RBRACE
         """
@@ -161,81 +199,15 @@ class RustParser(PLYParser):
         print("Symbol Table: ", self.symbolTable)
         self.symbolTable = self.symbolTable[:-1]
 
-    def p_stmt_list(self, p):
-        """ stmt_list : stmt
-                      | stmt stmt_list
+    def p_type(self, p):
+        """ type : dataType
+                 | LBRACKET dataType SEMI INT_CONST_DEC RBRACKET
         """
-        pass
 
-    def p_stmt(self,p):
-        """ stmt : declaration
-                 | selectionStmt
-                 | iterationStmt
-                 | compoundStmt
-                 | empty
-        """
-        pass
+        # TODO: check if p is for array and return accordingly.
+        p[0] = p[1]
 
-
-    def p_selectionStmt(self,p):
-        """ selectionStmt : IF conditionStmt compoundStmt
-                          | IF conditionStmt compoundStmt ELSE compoundStmt 
-        """
-        pass
-
-    def p_iterationStmt(self,p):
-        """ iterationStmt : WHILE conditionStmt compoundStmt
-        """ 
-        pass
-
-    def p_conditionStmt(self,p):
-        """ conditionStmt : expression
-                          | expression logicalOp expression
-        """
-        pass
-
-    def p_expression(self,p):
-        """ expression : relationalExpr
-                       | logicalExpr
-                       | arithExpr
-        """
-        pass
-
-    def p_relationalExpr(self,p):
-        """ relationalExpr : arithExpr relationalOp arithExpr
-        """
-        pass
-
-    def p_logicalExpr(self,p):
-        """ logicalExpr : logicalExpr relationalOp logicalExpr
-                        | BOOL_CONST
-        """ 
-        pass
-
-    def p_logicalOp(self,p):
-        """ logicalOp : LAND
-                      | LOR
-        """
-        pass
-
-    def p_relationalOp(self,p):
-        """ relationalOp : LT
-                         | GT
-                         | LE
-                         | GE
-                         | NE
-                         | EQ
-        """
-        pass
-
-    def p_declaration(self,p):
-        """ declaration : LET variable COLON dataType EQUALS expression SEMI
-                        | LET MUT variable COLON dataType EQUALS expression SEMI
-        """
-        print("Adding ", (p[2], p[4]), "to", self.symbolTable[-1])
-        self.symbolTable[-1][p[2]] = p[4]
-
-    def p_dataType(self,p):
+    def p_dataType(self, p):
         """ dataType : I8
                      | I16
                      | I32
@@ -245,57 +217,76 @@ class RustParser(PLYParser):
                      | U32
                      | U64
                      | BOOL
+                     | CHAR
         """
         p[0] = p[1]
 
-    # TODO: add scope check for variable in the symbol table from Rahul-RB/PyRust
-    def p_variable(self,p):
-        """ variable : ID
-        """
-        p[0] = p[1]
-
-    def p_arithExpr(self,p):
-        """ arithExpr : arithExpr PLUS arithExpr
-                      | arithExpr MINUS arithExpr
-                      | arithExpr2
+    def p_expr(self, p):
+        """ expr : literal
+                 | ID
+                 | unopExpr
+                 | binopExpr
+                 | LPAREN expr RPAREN
         """
         pass
 
-    def p_arithExpr2(self,p):
-        """ arithExpr2 : arithExpr2 TIMES arithExpr2
-                       | arithExpr2 DIVIDE arithExpr2
-                       | arithExpr3 
+    def p_literal(self, p):
+        """ literal : CHAR_CONST
+                    | FLOAT_CONST
+                    | INT_CONST_DEC
+                    | BOOL_CONST
         """
         pass
 
-    def p_arithExpr3(self,p):
-        """ arithExpr3 : ID
-                       | number
-                       | LPAREN arithExpr RPAREN
-                       | unaryOperation
+    def p_unopExpr(self, p):
+        """ unopExpr : unop expr
         """
         pass
 
-    def p_number(self,p):
-        """ number : INT_CONST_DEC
-                   | FLOAT_CONST
-        """
-        pass
-    def p_unaryOperation(self,p):
-        """ unaryOperation : ID unaryOperator ID
-                           | ID unaryOperator number
-                           | ID unaryOperator LPAREN arithExpr RPAREN
+    def p_unop(self, p):
+        """ unop : PLUS
+                 | MINUS
+                 | LNOT
         """
         pass
 
-    def p_unaryOperator(self,p):
-        """ unaryOperator : PLUSEQUAL
-                          | MINUSEQUAL
-                          | TIMESEQUAL
-                          | DIVEQUAL
-                          | MODULUSEQUAL
+    def p_binopExpr(self, p):
+        """ binopExpr : expr binop expr
         """
         pass
+
+    def p_binop(self, p):
+        """ binop : arithOp
+                  | logiOp
+                  | relOp
+        """
+        pass
+
+    def p_arithOp(self, p):
+        """ arithOp : PLUS
+                    | MINUS
+                    | TIMES
+                    | DIVIDE
+                    | MODULUS
+        """
+        pass
+
+    def p_logiOp(self, p):
+        """ logiOp : LAND
+                   | LOR
+        """
+        pass
+
+    def p_relOp(self, p):
+        """ relOp : LT
+                  | GT
+                  | LE
+                  | GE
+                  | EQ
+                  | NE
+        """
+        pass
+
 
     def p_empty(self, p):
         """ empty : """

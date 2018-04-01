@@ -128,16 +128,6 @@ class RustParser(PLYParser):
     #     """
     #     return self.clex.last_token
 
-    # TODO: Either use this or write better grammar
-    # precedence = (
-    #     ('left', 'LOR'),
-    #     ('left', 'LAND'),
-    #     ('left', 'EQ', 'NE'),
-    #     ('left', 'GT', 'GE', 'LT', 'LE'),
-    #     ('left', 'PLUS', 'MINUS'),
-    #     ('left', 'TIMES', 'DIVIDE')
-    # )
-
     def _getCoord(self, p, i):
         return self._coord(lineno=p.lineno(i), column=self.clex.find_tok_column(p.lexpos(i)))
 
@@ -309,54 +299,38 @@ class RustParser(PLYParser):
         p[0] = RustAST.Constant(self.typeMap[p1.type], p1.value)
 
     def p_unopExpr(self, p):
-        """ unopExpr : unop expr
+        """ unopExpr : PLUS expr
+                     | MINUS expr
+                     | LNOT expr
         """
         p[0] = RustAST.UnaryOp(p[1], p[2])
 
-    def p_unop(self, p):
-        """ unop : PLUS
-                 | MINUS
-                 | LNOT
-        """
-        p[0] = p[1]
+    precedence = (
+        ("left", "LOR"),
+        ("left", "LAND"),
+        ("left", "EQ", "NE"),
+        ("left", "GT", "GE", "LT", "LE"),
+        ("left", "PLUS", "MINUS"),
+        ("left", "TIMES", "DIVIDE", "MODULUS"),
+        ("left", "LNOT")
+    )
 
     def p_binopExpr(self, p):
-        """ binopExpr : expr binop expr
+        """ binopExpr : expr PLUS expr
+                      | expr MINUS expr
+                      | expr TIMES expr
+                      | expr DIVIDE expr
+                      | expr MODULUS expr
+                      | expr LAND expr
+                      | expr LOR expr
+                      | expr LT expr
+                      | expr GT expr
+                      | expr LE expr
+                      | expr GE expr
+                      | expr EQ expr
+                      | expr NE expr
         """
         p[0] = RustAST.BinaryOp(p[2], p[1], p[3])
-
-    def p_binop(self, p):
-        """ binop : arithOp
-                  | logiOp
-                  | relOp
-        """
-        p[0] = p[1]
-
-    def p_arithOp(self, p):
-        """ arithOp : PLUS
-                    | MINUS
-                    | TIMES
-                    | DIVIDE
-                    | MODULUS
-        """
-        p[0] = p[1]
-
-    def p_logiOp(self, p):
-        """ logiOp : LAND
-                   | LOR
-        """
-        p[0] = p[1]
-
-    def p_relOp(self, p):
-        """ relOp : LT
-                  | GT
-                  | LE
-                  | GE
-                  | EQ
-                  | NE
-        """
-        p[0] = p[1]
-
 
     def p_empty(self, p):
         """ empty : """

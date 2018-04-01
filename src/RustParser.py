@@ -158,11 +158,23 @@ class RustParser(PLYParser):
         """
         p[0] = p[1]
 
+    defaults = {
+        "c": "\0",
+        "f": 0.0,
+        "i": 0,
+        "b": False
+    }
+
     def p_declStmt(self, p):
-        """ declStmt : LET ID COLON type EQUALS expr SEMI
-                     | LET MUT ID COLON type EQUALS expr SEMI
+        """ declStmt : LET ID COLON type EQUALS init SEMI
+                     | LET MUT ID COLON type EQUALS init SEMI
         """
-        mut, typ, ide, expr = (True, p[5], p[3], p[7]) if len(p) == 9 else (False, p[4], p[2], p[6])
+        mut, typ, ide, initInd = (True, p[5], p[3], 7) if len(p) == 9 else (False, p[4], p[2], 6)
+        init = p[initInd]
+
+        if typ["declType"] != init["initType"]:
+            self._parse_error("Invalid initialization!", self._getCoord(p, initInd))
+
         print("Adding ", (ide, mut, typ), "to", self.symbolTable[-1])
 
         entry = {
@@ -170,10 +182,32 @@ class RustParser(PLYParser):
             "type": typ
         }
 
-        self.symbolTable[-1][ide] = entry
+        ideObj = RustAST.ID(ide)
 
-        p[0] = RustAST.Declaration(entry,
-                                   RustAST.Assignment("=", RustAST.ID(ide), expr))
+        if typ["declType"] == "var":
+            p[0] = RustAST.Declaration(entry,
+                                       RustAST.Assignment("=", ideObj, init["initData"]))
+        elif typ["declType"] == "arr":
+            if len(init["initData"]) > int(typ["length"]):
+                self._parse_error("Excess elements in array initializer!", self._getCoord(p, initInd))
+
+            assignments = []
+
+            for index, const in enumerate(init["initData"]):
+                assignments.append(RustAST.Assignment("=", RustAST.ArrayElement(RustAST.Constant("i64", index), ideObj), const))
+
+            for index in range(len(init["initData"]), int(typ["length"])):
+                assignments.append(RustAST.Assignment(
+                    "=",
+                    RustAST.ArrayElement(RustAST.Constant("i64", index), ideObj),
+                    RustAST.Constant(
+                        typ["dataType"],
+                        self.defaults[typ["dataType"][0]]
+                    )
+                ))
+
+            p[0] = RustAST.ArrayDecl(entry, typ["length"], assignments)
+        self.symbolTable[-1][ide] = entry
 
     def p_selStmt(self, p):
         """ selStmt : IF expr compStmt
@@ -196,27 +230,77 @@ class RustParser(PLYParser):
     def p_compStmt(self, p):
         """ compStmt : lbrace stmtList rbrace
         """
-        # print("p_compStmt:", p[2])
         p[0] = RustAST.Compound(block_items=p[2])
 
     def p_assignStmt(self, p):
         """ assignStmt : ID EQUALS expr SEMI
+                       | ID LBRACKET expr RBRACKET EQUALS expr SEMI
         """
         isDecl = False
         isMut = None
+        typ = None
+
         for scope in reversed(self.symbolTable):
             if p[1] in scope:
                 isDecl = True
                 isMut = scope[p[1]]["mut"]
+                typ = scope[p[1]]["type"]
                 break
 
         if not isDecl:
-            self._parse_error("Variable %s is not declared!" % p[1], self._getCoord(p, 1))
+            self._parse_error("%s is not declared!" % p[1], self._getCoord(p, 1))
 
         if not isMut:
-            self._parse_error("Variable %s is not mutable!" % p[1], self._getCoord(p, 1))
+            self._parse_error("%s is not mutable!" % p[1], self._getCoord(p, 1))
 
-        p[0] = RustAST.Assignment("=", RustAST.ID(p[1]), p[3])
+        lhs = None
+        rhs = None
+
+        if len(p) == 5:
+            if typ["declType"] != "var":
+                self._parse_error("%s is not a variable!" % p[1], self._getCoord(p, 1))
+
+            lhs, rhs = RustAST.ID(p[1]), p[3]
+        else:
+            if typ["declType"] != "arr":
+                self._parse_error("%s is not an array!" % p[1], self._getCoord(p, 1))
+
+            lhs, rhs = RustAST.ArrayElement(p[3], RustAST.ID(p[1])), p[6]
+        p[0] = RustAST.Assignment("=", lhs, rhs)
+
+    def p_init(self, p):
+        """ init : expr
+                 | LBRACKET arrayInitList RBRACKET
+                 | LBRACKET literal SEMI INT_CONST_DEC RBRACKET
+        """
+        init = {}
+        lp = len(p)
+        if lp == 2:
+            init = {
+                "initType": "var",
+                "initData": p[1]
+            }
+        elif lp == 4:
+            init = {
+                "initType": "arr",
+                "initData": p[2]
+            }
+        elif lp == 6:
+            init = {
+                "initType": "arr",
+                "initData": [p[2] for _ in range(int(p[4]))]
+            }
+        p[0] = init
+
+    def p_arrayInitList(self, p):
+        """ arrayInitList : arrayInitList COMMA literal
+                          | literal
+        """
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1]
+            p[0].append(p[3])
 
     def p_lbrace(self, p):
         """ lbrace : LBRACE
@@ -236,8 +320,19 @@ class RustParser(PLYParser):
                  | LBRACKET dataType SEMI INT_CONST_DEC RBRACKET
         """
 
-        # TODO: check if p is for array and return accordingly.
-        p[0] = p[1]
+        typ = {}
+        if len(p) == 2:
+            typ = {
+                "declType": "var",
+                "dataType": p[1]
+            }
+        else:
+            typ = {
+                "declType": "arr",
+                "dataType": p[2],
+                "length": p[4]
+            }
+        p[0] = typ
 
     def p_dataType(self, p):
         """ dataType : I8
@@ -282,21 +377,32 @@ class RustParser(PLYParser):
         p[0] = p1Obj
 
     typeMap = {
-        "CHAR_CONST": "char",
-        "FLOAT_CONST": "f64",
-        "INT_CONST_DEC": "i64",
-        "BOOL_CONST": "bool"
+        "CHAR_CONST": {
+            "typ": "char",
+            "conv": str,
+        },
+        "FLOAT_CONST": {
+            "typ": "f64",
+            "conv": float,
+        },
+        "INT_CONST_DEC": {
+            "typ": "i64",
+            "conv": int,
+        },
+        "BOOL_CONST": {
+            "typ": "bool",
+            "conv": lambda x: True if x=="true" else False,
+        }
     }
+
     def p_literal(self, p):
         """ literal : CHAR_CONST
                     | FLOAT_CONST
                     | INT_CONST_DEC
                     | BOOL_CONST
         """
-        print("p_literal:", p.slice[1].value)
-
         p1 = p.slice[1]
-        p[0] = RustAST.Constant(self.typeMap[p1.type], p1.value)
+        p[0] = RustAST.Constant(self.typeMap[p1.type]["typ"], self.typeMap[p1.type]["conv"](p1.value))
 
     def p_unopExpr(self, p):
         """ unopExpr : PLUS expr

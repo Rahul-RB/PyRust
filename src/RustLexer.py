@@ -113,7 +113,7 @@ class RustLexer(object):
         'LPAREN', 'RPAREN',         # ( )
         'LBRACKET', 'RBRACKET',     # [ ]
         'LBRACE', 'RBRACE',         # { }
-        # 'COMMA',                    # ,
+        'COMMA',                    # ,
         'SEMI', 'COLON',            # ; :
     )
 
@@ -185,8 +185,7 @@ class RustLexer(object):
     t_LBRACKET          = r'\['
     t_RBRACKET          = r'\]'
 
-    # TODO: implement array experssions
-    # t_COMMA             = r','
+    t_COMMA             = r','
 
     t_SEMI              = r';'
     t_COLON             = r':'

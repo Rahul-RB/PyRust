@@ -382,11 +382,11 @@ class RustParser(PLYParser):
             "conv": str,
         },
         "FLOAT_CONST": {
-            "typ": "f64",
+            "typ": "float",
             "conv": float,
         },
         "INT_CONST_DEC": {
-            "typ": "i64",
+            "typ": "integer",
             "conv": int,
         },
         "BOOL_CONST": {
@@ -402,7 +402,19 @@ class RustParser(PLYParser):
                     | BOOL_CONST
         """
         p1 = p.slice[1]
-        p[0] = RustAST.Constant(self.typeMap[p1.type]["typ"], self.typeMap[p1.type]["conv"](p1.value))
+        typ = self.typeMap[p1.type]["typ"]
+        try:
+            p[0] = RustAST.Constant(typ, self.typeMap[p1.type]["conv"](p1.value))
+        except ValueError as ve:
+            suffixStart = None
+            if typ == "integer":
+                suffixStart = "i"
+            elif typ == "float":
+                suffixStart = "f"
+
+            p1Value = p1.value[:p1.value.find(suffixStart)]
+            p1Type = p1.value[p1.value.find(suffixStart):]
+            p[0] = RustAST.Constant(p1Type, self.typeMap[p1.type]["conv"](p1Value))
 
     def p_unopExpr(self, p):
         """ unopExpr : PLUS expr

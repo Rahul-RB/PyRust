@@ -8,6 +8,10 @@ fn main () {
 
     let mut a1:i64 = (-5 * 99) + 8;
 
+    if 1>2&&false {
+        b = 8;
+    }
+
     while a1 < 7i64 {
         a1 = 555;
         if b != 8i32 {

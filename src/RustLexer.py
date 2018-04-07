@@ -37,8 +37,11 @@ class RustLexer(object):
         self.lexer.lineno = 1
 
     def stripComments(self,text):
-        res = re.sub('//.*?(\r\n?|\n)|/\*.*?\*/', '', text, flags=re.S)
-        return res
+        cr = re.compile(r"(\/\/.*\n|/\*([^*]|\*(?!/)|\n)*\*/)")
+        matches = map(lambda match: match[0], cr.findall(text))
+        for match in matches:
+            text = text.replace(match, "\n" * match.count("\n"))
+        return text
 
     def input(self, text):
         self.lexer.input(self.stripComments(text))

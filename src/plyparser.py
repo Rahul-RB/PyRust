@@ -1,4 +1,5 @@
 import warnings
+from os import path
 
 class Coord(object):
     """ Coordinates of a syntactic element. Consists of:
@@ -13,7 +14,7 @@ class Coord(object):
         self.column = column
 
     def __str__(self):
-        str = "%s:(line=%s" % (self.file, self.line)
+        str = "\033[1;36m%s\033[0m at (line=%s" % (path.split(self.file)[1], self.line)
         if self.column: str += ", column=%s" % self.column
         return str+")"
 
@@ -22,6 +23,7 @@ class ParseError(Exception): pass
 
 
 class PLYParser(object):
+    sourceCode = None
     def _create_opt_rule(self, rulename):
         """ Given a rule name, creates an optional ply.yacc rule
             for it. The name of the optional rule is
@@ -54,7 +56,10 @@ class PLYParser(object):
         return self._coord(p.lineno(token_idx), column)
 
     def _parse_error(self, msg, coord):
-        print("\033[1;31mParseError\033[0m at %s -> %s" % (coord, msg))
+        print("\033[1;31mParseError\033[0m in %s" % coord)
+        print("\t", self.sourceCode[coord.line-1])
+        print(("\t{:>%d}" % (coord.column+1)).format("^"))
+        print(msg)
         exit()
         # This causes errors to be ugly.
         # raise ParseError("%s: %s" % (coord, msg))

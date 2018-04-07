@@ -111,6 +111,8 @@ class RustParser(PLYParser):
         self.clex.reset_lineno()
         self._lastYieldedToken = None
 
+        self.sourceCode = text.split("\n")
+
         return self.rustParser.parse(input=text,
                                      lexer=self.clex,
                                      debug=debuglevel)
@@ -172,25 +174,26 @@ class RustParser(PLYParser):
                 rhs.type = lhs.type
                 autoConv = True
             if not autoConv:
-                self._parse_error("Mismatched types! expected %s, found %s!" % (lhs.type, rhs.type), self._getCoord(p, 1))
+                self._parse_error("Mismatched types! expected %s, found %s!" % (lhs.type, rhs.type), rhs.coord)
         return lhs, rhs
 
     def p_declStmt(self, p):
         """ declStmt : LET ID COLON type EQUALS init SEMI
                      | LET MUT ID COLON type EQUALS init SEMI
         """
-        mut, typ, ide, initInd = (True, p[5], p[3], 7) if len(p) == 9 else (False, p[4], p[2], 6)
+        mut, typ, ideInd, initInd = (True, p[5], 3, 7) if len(p) == 9 else (False, p[4], 2, 6)
+        ide = p[ideInd]
         init = p[initInd]
 
         if typ["declType"] != init["initType"]:
-            self._parse_error("Invalid initialization!", self._getCoord(p, initInd))
+            self._parse_error("Invalid initialization!", p[initInd]["coord"])
 
         entry = {
             "mut": mut,
             "type": typ
         }
 
-        ideObj = RustAST.ID(ide, typ["dataType"])
+        ideObj = RustAST.ID(ide, typ["dataType"], self._token_coord(p, ideInd))
         lhs = ideObj
 
         if typ["declType"] == "var":
@@ -199,28 +202,43 @@ class RustParser(PLYParser):
             lhs, rhs = self._checkAssignmentType(lhs, rhs, p)
 
             p[0] = RustAST.Declaration(entry,
-                                       RustAST.Assignment("=", lhs, rhs))
+                                       RustAST.Assignment("=", lhs, rhs, self._token_coord(p, ideInd)),
+                                       self._token_coord(p, 1))
         elif typ["declType"] == "arr":
             if len(init["initData"]) > int(typ["length"]):
-                self._parse_error("Excess elements in array initializer!", self._getCoord(p, initInd))
+                self._parse_error("Excess elements in array initializer!", p[initInd]["coord"])
 
             assignments = []
 
             for index, rhs in enumerate(init["initData"]):
                 lhs, rhs = self._checkAssignmentType(lhs, rhs, p)
-                assignments.append(RustAST.Assignment("=", RustAST.ArrayElement(RustAST.Constant("i64", index), lhs, lhs.type), rhs))
+                assignments.append(RustAST.Assignment(
+                    "=",
+                    RustAST.ArrayElement(
+                        RustAST.Constant(
+                            "i64",
+                            index,
+                            self._token_coord(p, initInd)),
+                        lhs,
+                        lhs.type,
+                        self._token_coord(p, initInd)),
+                    rhs,
+                    self._token_coord(p, initInd)
+                ))
 
             for index in range(len(init["initData"]), int(typ["length"])):
                 assignments.append(RustAST.Assignment(
                     "=",
-                    RustAST.ArrayElement(RustAST.Constant("i64", index), lhs, lhs.type),
+                    RustAST.ArrayElement(RustAST.Constant("i64", index), lhs, lhs.type, self._token_coord(p, initInd)),
                     RustAST.Constant(
                         typ["dataType"],
-                        self.defaults[typ["dataType"][0]]
-                    )
+                        self.defaults[typ["dataType"][0]],
+                        self._token_coord(p, initInd)
+                    ),
+                    self._token_coord(p, initInd)
                 ))
 
-            p[0] = RustAST.ArrayDecl(entry, typ["length"], assignments)
+            p[0] = RustAST.ArrayDecl(entry, typ["length"], assignments, self._token_coord(p, 1))
 
         print("Adding ", (ide, mut, typ), "to", self.symbolTable[-1])
         self.symbolTable[-1][ide] = entry
@@ -232,7 +250,7 @@ class RustParser(PLYParser):
         ifExpr = p[2]
 
         if ifExpr.type != "bool":
-            self._parse_error("Mismatched types! expected bool, found %s!" % ifExpr.type, self._getCoord(p, 1))
+            self._parse_error("Mismatched types! expected bool, found %s!" % ifExpr.type, p[2].coord)
 
         ifTrueBlock = p[3]
         ifFalseBlock = None
@@ -240,20 +258,20 @@ class RustParser(PLYParser):
         if len(p) == 6:
             ifFalseBlock = p[5]
 
-        p[0] = RustAST.If(ifExpr, ifTrueBlock, ifFalseBlock)
+        p[0] = RustAST.If(ifExpr, ifTrueBlock, ifFalseBlock, self._token_coord(p, 1))
 
     def p_iterStmt(self, p):
         """ iterStmt : WHILE expr compStmt
         """
         if p[2].type != "bool":
-            self._parse_error("Mismatched types! expected bool, found %s!" % p[2].type, self._getCoord(p, 1))
+            self._parse_error("Mismatched types! expected bool, found %s!" % p[2].type, p[2].coord)
 
-        p[0] = RustAST.While(p[2], p[3])
+        p[0] = RustAST.While(p[2], p[3], self._token_coord(p, 1))
 
     def p_compStmt(self, p):
         """ compStmt : lbrace stmtList rbrace
         """
-        p[0] = RustAST.Compound(block_items=p[2])
+        p[0] = RustAST.Compound(p[2], self._token_coord(p, 1))
 
     def p_assignStmt(self, p):
         """ assignStmt : ID EQUALS expr SEMI
@@ -271,28 +289,28 @@ class RustParser(PLYParser):
                 break
 
         if not isDecl:
-            self._parse_error("%s is not declared!" % p[1], self._getCoord(p, 1))
+            self._parse_error("%s is not declared!" % p[1], self._token_coord(p, 1))
 
         if not isMut:
-            self._parse_error("%s is not mutable!" % p[1], self._getCoord(p, 1))
+            self._parse_error("%s is not mutable!" % p[1], self._token_coord(p, 1))
 
         lhs = None
         rhs = None
 
         if len(p) == 5:
             if typ["declType"] != "var":
-                self._parse_error("%s is not a variable!" % p[1], self._getCoord(p, 1))
+                self._parse_error("%s is not a variable!" % p[1], self._token_coord(p, 1))
 
-            lhs, rhs = RustAST.ID(p[1], typ["dataType"]), p[3]
+            lhs, rhs = RustAST.ID(p[1], typ["dataType"], self._token_coord(p, 1)), p[3]
         else:
             if typ["declType"] != "arr":
-                self._parse_error("%s is not an array!" % p[1], self._getCoord(p, 1))
+                self._parse_error("%s is not an array!" % p[1], self._token_coord(p, 1))
 
-            lhs, rhs = RustAST.ArrayElement(p[3], RustAST.ID(p[1], typ["dataType"]), typ["dataType"]), p[6]
+            lhs, rhs = RustAST.ArrayElement(p[3], RustAST.ID(p[1], typ["dataType"], self._token_coord(p, 1)), typ["dataType"], self._token_coord(p, 3)), p[6]
 
         lhs, rhs = self._checkAssignmentType(lhs, rhs, p)
 
-        p[0] = RustAST.Assignment("=", lhs, rhs)
+        p[0] = RustAST.Assignment("=", lhs, rhs, self._token_coord(p, 1))
 
     def p_init(self, p):
         """ init : expr
@@ -304,17 +322,20 @@ class RustParser(PLYParser):
         if lp == 2:
             init = {
                 "initType": "var",
-                "initData": p[1]
+                "initData": p[1],
+                "coord": p[1].coord
             }
         elif lp == 4:
             init = {
                 "initType": "arr",
-                "initData": p[2]
+                "initData": p[2],
+                "coord": p[2][0].coord
             }
         elif lp == 6:
             init = {
                 "initType": "arr",
-                "initData": [p[2] for _ in range(int(p[4]))]
+                "initData": [p[2] for _ in range(int(p[4]))],
+                "coord": p[2].coord
             }
         p[0] = init
 
@@ -395,9 +416,9 @@ class RustParser(PLYParser):
                         break
 
                 if not isDecl:
-                    self._parse_error("Variable %s is not declared!" % p[1], self._getCoord(p, 1))
+                    self._parse_error("Variable %s is not declared!" % p[1], self._token_coord(p, 1))
 
-                p1Obj = RustAST.ID(p[1], cs[p[1]]["type"]["dataType"])
+                p1Obj = RustAST.ID(p[1], cs[p[1]]["type"]["dataType"], self._token_coord(p, 1))
             else:
                 p1Obj = p[1]
         else:
@@ -432,7 +453,7 @@ class RustParser(PLYParser):
         p1 = p.slice[1]
         typ = self.typeMap[p1.type]["typ"]
         try:
-            p[0] = RustAST.Constant(typ, self.typeMap[p1.type]["conv"](p1.value))
+            p[0] = RustAST.Constant(typ, self.typeMap[p1.type]["conv"](p1.value), self._token_coord(p, 1))
         except ValueError as ve:
             suffixStart = None
             if typ == "integer":
@@ -445,7 +466,7 @@ class RustParser(PLYParser):
 
             p1Value = p1.value[:p1.value.find(suffixStart)]
             p1Type = p1.value[p1.value.find(suffixStart):]
-            p[0] = RustAST.Constant(p1Type, self.typeMap[p1.type]["conv"](p1Value))
+            p[0] = RustAST.Constant(p1Type, self.typeMap[p1.type]["conv"](p1Value), self._token_coord(p, 1))
 
     def p_unopExpr(self, p):
         """ unopExpr : MINUS expr
@@ -453,9 +474,9 @@ class RustParser(PLYParser):
         """
         if p[2].type != "char":
             if not ((p[1] == "-" and p[2].type.startswith("u")) or (p[1] == "!" and p[2].type.startswith("f"))):
-                p[0] = RustAST.UnaryOp(p[1], p[2], p[2].type)
+                p[0] = RustAST.UnaryOp(p[1], p[2], p[2].type, self._token_coord(p, 1))
                 return
-        self._parse_error("Cannot apply unary operator `%s` to type %s!" % (p[1], p[2].type), self._getCoord(p, 1))
+        self._parse_error("Cannot apply unary operator `%s` to type %s!" % (p[1], p[2].type), self._token_coord(p, 1))
 
     precedence = (
         ("left", "LOR"),
@@ -485,17 +506,17 @@ class RustParser(PLYParser):
         invalidTypes = {"char", "bool"}
         arithOpers = {"+", "-", "*", "/", "%"}
         if p[2] in arithOpers and (p[1].type in invalidTypes or p[3].type in invalidTypes):
-            self._parse_error("No implementation for `%s %s %s`!" % (p[1].type, p[2], p[3].type), self._getCoord(p, 1))
+            self._parse_error("No implementation for `%s %s %s`!" % (p[1].type, p[2], p[3].type), self._token_coord(p, 2))
 
         if p[2] in {"&&", "||"}:
             misMatch = None
             if p[1].type != "bool":
-                misMatch = p[1].type
+                misMatch = p[1]
             elif p[3].type != "bool":
-                misMatch = p[3].type
+                misMatch = p[3]
 
             if misMatch != None:
-                self._parse_error("Mismatched types! expected bool, found %s!" % misMatch, self._getCoord(p, 1))
+                self._parse_error("Mismatched types! expected bool, found %s!" % misMatch.type, misMatch.coord)
 
         autoConv = False
         if p[1].type != p[3].type:
@@ -507,12 +528,12 @@ class RustParser(PLYParser):
                 autoConv = True
 
             if not autoConv:
-                self._parse_error("Mismatched types! expected %s, found %s!" % (p[1].type, p[3].type), self._getCoord(p, 1))
+                self._parse_error("Mismatched types! expected %s, found %s!" % (p[1].type, p[3].type), p[3].coord)
 
         if p[2] in arithOpers:
-            p[0] = RustAST.BinaryOp(p[2], p[1], p[3], p[1].type)
+            p[0] = RustAST.BinaryOp(p[2], p[1], p[3], p[1].type, self._token_coord(p, 2))
         else:
-            p[0] = RustAST.BinaryOp(p[2], p[1], p[3], "bool")
+            p[0] = RustAST.BinaryOp(p[2], p[1], p[3], "bool", self._token_coord(p, 2))
 
 
     def p_empty(self, p):

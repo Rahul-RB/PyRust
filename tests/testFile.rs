@@ -4,7 +4,7 @@ fn main () {
     let mut a2:[f32; 5]=[99.87; 2];
     let mut b:i32 = 1;
     b = -1;
-    a1[3+b] = true;
+    a1[3+b] = a1[0] && a1[1];
 
     let mut a1:i64 = (-5 * 99) + 8;
 

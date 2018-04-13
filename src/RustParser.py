@@ -273,40 +273,55 @@ class RustParser(PLYParser):
         """
         p[0] = RustAST.Compound(p[2], self._token_coord(p, 1))
 
+    def p_arrayElement(self, p):
+        """ arrayElement : ID LBRACKET expr RBRACKET
+        """
+        p[0] = RustAST.ArrayElement(p[3], RustAST.ID(p[1], None, self._token_coord(p, 1)), None, self._token_coord(p, 1))
+
     def p_assignStmt(self, p):
         """ assignStmt : ID EQUALS expr SEMI
-                       | ID LBRACKET expr RBRACKET EQUALS expr SEMI
+                       | arrayElement EQUALS expr SEMI
         """
         isDecl = False
         isMut = None
         typ = None
 
+        isArray = isinstance(p[1], RustAST.ArrayElement)
+
+        p1 = p[1]
+        if isArray:
+            p1 = p[1].arrId.name
+
         for scope in reversed(self.symbolTable):
-            if p[1] in scope:
+            if p1 in scope:
                 isDecl = True
-                isMut = scope[p[1]]["mut"]
-                typ = scope[p[1]]["type"]
+                isMut = scope[p1]["mut"]
+                typ = scope[p1]["type"]
                 break
 
         if not isDecl:
-            self._parse_error("%s is not declared!" % p[1], self._token_coord(p, 1))
+            self._parse_error("%s is not declared!" % p1, self._token_coord(p, 1))
 
         if not isMut:
-            self._parse_error("%s is not mutable!" % p[1], self._token_coord(p, 1))
+            self._parse_error("%s is not mutable!" % p1, self._token_coord(p, 1))
+
+        if isArray:
+            p[1].arrId.type = typ["dataType"]
+            p[1].type = typ["dataType"]
 
         lhs = None
-        rhs = None
+        rhs = p[3]
 
-        if len(p) == 5:
+        if not isArray:
             if typ["declType"] != "var":
-                self._parse_error("%s is not a variable!" % p[1], self._token_coord(p, 1))
+                self._parse_error("%s is not a variable!" % p1, self._token_coord(p, 1))
 
-            lhs, rhs = RustAST.ID(p[1], typ["dataType"], self._token_coord(p, 1)), p[3]
+            lhs = RustAST.ID(p1, typ["dataType"], self._token_coord(p, 1))
         else:
             if typ["declType"] != "arr":
-                self._parse_error("%s is not an array!" % p[1], self._token_coord(p, 1))
+                self._parse_error("%s is not an array!" % p1, self._token_coord(p, 1))
 
-            lhs, rhs = RustAST.ArrayElement(p[3], RustAST.ID(p[1], typ["dataType"], self._token_coord(p, 1)), typ["dataType"], self._token_coord(p, 3)), p[6]
+            lhs = p[1]
 
         lhs, rhs = self._checkAssignmentType(lhs, rhs, p)
 
@@ -315,7 +330,7 @@ class RustParser(PLYParser):
     def p_init(self, p):
         """ init : expr
                  | LBRACKET arrayInitList RBRACKET
-                 | LBRACKET literal SEMI INT_CONST_DEC RBRACKET
+                 | LBRACKET expr SEMI INT_CONST_DEC RBRACKET
         """
         init = {}
         lp = len(p)
@@ -340,8 +355,8 @@ class RustParser(PLYParser):
         p[0] = init
 
     def p_arrayInitList(self, p):
-        """ arrayInitList : arrayInitList COMMA literal
-                          | literal
+        """ arrayInitList : arrayInitList COMMA expr
+                          | expr
         """
         if len(p) == 2:
             p[0] = [p[1]]
@@ -400,25 +415,38 @@ class RustParser(PLYParser):
     def p_expr(self, p):
         """ expr : literal
                  | ID
+                 | arrayElement
                  | unopExpr
                  | binopExpr
                  | LPAREN expr RPAREN
         """
         p1Obj = None
         if len(p) == 2:
-            if p.slice[1].type == "ID":
+            isArray = isinstance(p[1], RustAST.ArrayElement)
+            if isArray or p.slice[1].type == "ID":
                 isDecl = False
                 cd = None
+
+                p1 = p[1]
+                if isArray:
+                    p1 = p[1].arrId.name
+
                 for scope in reversed(self.symbolTable):
-                    if p[1] in scope:
+                    if p1 in scope:
                         isDecl = True
                         cs = scope
+                        typ = scope[p1]["type"]
                         break
 
                 if not isDecl:
-                    self._parse_error("Variable %s is not declared!" % p[1], self._token_coord(p, 1))
+                    self._parse_error("Variable %s is not declared!" % p1, self._token_coord(p, 1))
 
-                p1Obj = RustAST.ID(p[1], cs[p[1]]["type"]["dataType"], self._token_coord(p, 1))
+                if isArray:
+                    p[1].arrId.type = typ["dataType"]
+                    p[1].type = typ["dataType"]
+                    p1Obj = p[1]
+                else:
+                    p1Obj = RustAST.ID(p1, cs[p1]["type"]["dataType"], self._token_coord(p, 1))
             else:
                 p1Obj = p[1]
         else:

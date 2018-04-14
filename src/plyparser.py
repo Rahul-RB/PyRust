@@ -55,8 +55,8 @@ class PLYParser(object):
         column = (p.lexpos(token_idx) - (last_cr))
         return self._coord(p.lineno(token_idx), column)
 
-    def _parse_error(self, msg, coord):
-        print("\033[1;31mParseError\033[0m in %s" % coord)
+    def _parse_error(self, msg, coord, errorType = "ParseError"):
+        print("\033[1;31m%s\033[0m in %s" % (errorType, coord))
         print("\t", self.sourceCode[coord.line-1])
         print(("\t{:>%d}" % (coord.column+1)).format("^"))
         print(msg)

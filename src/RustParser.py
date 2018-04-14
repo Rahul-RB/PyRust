@@ -118,8 +118,7 @@ class RustParser(PLYParser):
                                      debug=debuglevel)
 
     def _lexErrorFunc(self, msg, line, column):
-        print(msg, line, column)
-        self._parse_error(msg, self._coord(line, column))
+        self._parse_error(msg, self._coord(line, column), errorType = "LexicalError")
 
     # TODO: determine if this lookahead is required based on the production
     #       rules. If not, then remove it from the lexer itself.

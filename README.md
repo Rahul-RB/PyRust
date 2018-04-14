@@ -34,14 +34,14 @@
 - [x] If implementing using tool:
 	- [x] Provide appropriate semantic rules.
 #### Semantic Analysis
-- [ ] Take care of the primitive types and array types.
-- [ ] Take care of coersions.
-- [ ] Take care of Arithemetic expressions.
-- [ ] Concetrate on the looping construct choosen.
-- [ ] Update type and storage information into the symbol table.
-- [ ] Show Abstract Syntax tree(AST).
+- [x] Take care of the primitive types and array types.
+- [ ] ~Take care of coersions.~
+- [x] Take care of Arithemetic expressions.
+- [x] Concetrate on the looping construct choosen.
+- [x] Update type and storage information into the symbol table.
+- [x] Show Abstract Syntax tree(AST).
 #### Intermediate Code Generation
-- [ ] Three address code generation
+- [x] Three address code generation
 #### Optimizing Intermediate Code
 - [ ] Constant folding
 - [ ] Constant Propogation

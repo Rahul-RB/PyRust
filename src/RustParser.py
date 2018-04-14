@@ -137,7 +137,6 @@ class RustParser(PLYParser):
         """ start : FN MAIN LPAREN RPAREN compStmt
         """
         fileAST = RustAST.FileAST(ext=[p[5]])
-        fileAST.show()
         p[0] = fileAST
 
     def p_stmtList(self, p):

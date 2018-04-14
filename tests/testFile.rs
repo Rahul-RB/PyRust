@@ -1,16 +1,18 @@
 // For testing AST Generation
 fn main () {
-    let mut a1:[bool; 4]=[false, true];
-    let mut a2:[f32; 5]=[99.87; 2];
+    let mut a1:[bool; 4]=[!false, true&&false||true];
+    let mut a2:[f64; 5]=[99.87+99.1; 2];
     let mut b:i32 = 1;
     b = -1;
-    a1[3+b] = a1[0] && a1[1];
+    a1[3+b] = a1[0+99] && a1[1];
+
+    if 1>2&&a1[4+b*1] {
+        b = 8;
+    } else {
+        b = 1000;
+    }
 
     let mut a1:i64 = (-5 * 99) + 8;
-
-    if 1>2&&false {
-        b = 8;
-    }
 
     while a1 < 7i64 {
         a1 = 555;
@@ -25,7 +27,7 @@ fn main () {
 // // For testing parser
 // fn main(){
 //     let a:i32 = -(99 + 6) / 19 % 3;
-//     let c:i16 = a;
+//     let c:i32 = a;
 //     // let c:i16 = b;
 //     // ^ Will fail as b not declared
 //     let c:i32 = 99;

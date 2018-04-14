@@ -317,7 +317,7 @@ class RustParser(PLYParser):
             lhs = RustAST.ID(p1, typ["dataType"], self._token_coord(p, 1))
         else:
             if typ["declType"] != "arr":
-                self._parse_error("%s is not an array!" % p1, self._token_coord(p, 1))
+                self._parse_error("%s is not an array!" % p1, p[1].coord)
 
             lhs = p[1]
 
@@ -569,11 +569,7 @@ class RustParser(PLYParser):
     def p_error(self, p):
         # If error recovery is added here in the future, make sure
         # _getYaccLookaheadToken still works!
-        print(p)
         if p:
-            self._parse_error(
-                'before: %s' % p.value,
-                self._coord(lineno=p.lineno,
-                            column=self.clex.find_tok_column(p)))
+            self._parse_error("Before: %s" % p.value, self._coord(p.lineno, p.lexpos-self.clex.lexer.lexdata.rfind('\n', 0, p.lexpos)))
         else:
-            self._parse_error('At end of input', self.clex.filename)
+            self._parse_error("Reached EOF (maybe due to mismatched braces).", self._coord(len(self.sourceCode)-1))

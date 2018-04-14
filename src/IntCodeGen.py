@@ -107,8 +107,6 @@ def _threeAddr_UnaryOp(unOpNode):
     return childCode + "\t" + tTable[unOpNode] + " = " + unOpNode.op + " " + _getOperand(unOpNode.expr)
 
 def _threeAddr_ArrayElement(aeNode):
-    aeNode.show()
-
     if not tTable.get(aeNode.index, None):
         tTable[aeNode.index] = _getT()
 

@@ -57,8 +57,9 @@ class PLYParser(object):
 
     def _parse_error(self, msg, coord, errorType = "ParseError"):
         print("\033[1;31m%s\033[0m in %s" % (errorType, coord))
-        print("\t", self.sourceCode[coord.line-1])
-        print(("\t{:>%d}" % (coord.column+1)).format("^"))
+        if coord.column:
+            print(self.sourceCode[coord.line-1])
+            print(("{:>%d}" % (coord.column)).format("^"))
         print(msg)
         exit()
         # This causes errors to be ugly.

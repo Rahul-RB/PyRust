@@ -162,13 +162,14 @@ class RustParser(PLYParser):
         "c": "\0",
         "f": 0.0,
         "i": 0,
+        "u": 0,
         "b": False
     }
 
     def _checkAssignmentType(self, lhs, rhs, p):
         autoConv = False
         if lhs.type != rhs.type:
-            if (rhs.type == "integer" and lhs.type.startswith("i")) or (rhs.type == "float" and lhs.type.startswith("f")):
+            if (rhs.type == "integer" and lhs.type[0] in {"i", "u"}) or (rhs.type == "float" and lhs.type.startswith("f")):
                 rhs.type = lhs.type
                 autoConv = True
             if not autoConv:
@@ -546,10 +547,10 @@ class RustParser(PLYParser):
 
         autoConv = False
         if p[1].type != p[3].type:
-            if (p[1].type.startswith("i") and p[3].type == "integer") or (p[1].type.startswith("f") and p[3].type == "float"):
+            if (p[1].type[0] in {"i", "u"} and p[3].type == "integer") or (p[1].type.startswith("f") and p[3].type == "float"):
                 p[3].type = p[1].type
                 autoConv = True
-            elif (p[3].type.startswith("i") and p[1].type == "integer") or (p[3].type.startswith("f") and p[1].type == "float"):
+            elif (p[3].type[0] in {"i", "u"} and p[1].type == "integer") or (p[3].type.startswith("f") and p[1].type == "float"):
                 p[1].type = p[3].type
                 autoConv = True
 

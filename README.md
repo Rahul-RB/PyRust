@@ -14,8 +14,12 @@
 `$ ./tests/TestLexerAuto.py`
     - Lexer Manual Tests:<br>
 `$ ./tests/TestLexerManual.py`
-    - Parser Manual Tests:<br>
-`$ ./tests/TestParserManual.py`
+    - Symbol Table Test:<br>
+`$ ./tests/TestSymbolTable.py ./tests/testFile2.rs 2`
+    - Abstract Syntax Tree Test:<br>
+`$ ./tests/TestAST.py ./tests/testFile1.rs`
+    - Intermediate Code Generation Test:<br>
+`$ ./tests/TestICGen.py ./tests/testFile1.rs`
 - Clean project directory:<br>
 `$ ./tools/clean.sh`
 

@@ -9,15 +9,10 @@ sys.path.append(path.join(scriptPath, "..", "src"))
 import RustParser
 import IntCodeGen as icg
 
-parser = RustParser.RustParser(verbose=1)
+parser = RustParser.RustParser(verbose=0)
 
-rustFilePath = path.join(scriptPath, "testFile.rs")
-
-ast = parser.parse(path=rustFilePath)
-print("\n\t~~AST~~")
-ast.show()
+ast = parser.parse(path=sys.argv[1])
 
 ic = icg.generate(ast)
 
-print("\n\t~~IC~~")
 print(ic)

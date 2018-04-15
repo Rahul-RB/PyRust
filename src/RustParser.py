@@ -245,6 +245,7 @@ class RustParser(PLYParser):
     def p_selStmt(self, p):
         """ selStmt : IF expr compStmt
                     | IF expr compStmt ELSE compStmt
+                    | IF expr compStmt ELSE selStmt
         """
         ifExpr = p[2]
 

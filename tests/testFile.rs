@@ -9,8 +9,10 @@ fn main () {
 
     if 1>2&&a1[4+b*1] {
         b = 8;
-    } else {
+    } else if b != 9999 {
         b = 1000;
+    } else {
+        b= 11;
     }
 
     let mut a1:i64 = (-5 * 99) + 8;

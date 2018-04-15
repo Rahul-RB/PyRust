@@ -9,7 +9,7 @@ sys.path.append(path.join(scriptPath, "..", "src"))
 import RustParser
 import IntCodeGen as icg
 
-parser = RustParser.RustParser()
+parser = RustParser.RustParser(verbose=1)
 
 rustFilePath = path.join(scriptPath, "testFile.rs")
 

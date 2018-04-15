@@ -8,6 +8,7 @@ scriptPath = path.dirname(path.realpath(__file__))
 sys.path.append(path.join(scriptPath, "..", "src"))
 
 from RustLexer import RustLexer
+from RustParser import multiLineTabulate
 
 def tokenList(clex):
     return list(iter(clex.token, None))
@@ -41,25 +42,10 @@ testRustProgram = r"""fn main() {
 
 acr = m.stripComments(testRustProgram)
 
-lines = tuple(zip(testRustProgram.split("\n"), acr.split("\n")))
-mx = 0
-
-for line in lines:
-    lmx = max(len(line[0]), len(line[1]))
-    mx = lmx if lmx > mx else mx
-
-lbcr = len("Before Comment Removal")
-mx = lbcr if lbcr > mx else mx
-
-# print(("|{:<%d}|{:<%d}|" % (mx, mx)).format(*line))
-print(("╭{:─<%d}┬{:─<%d}╮" % (mx, mx)).format("",""))
-print(("│{:^%d}│{:^%d}│" % (mx, mx)).format("Before Comment Removal", "After Comment Removal"))
-print(("├{:─<%d}┼{:─<%d}┤" % (mx, mx)).format("",""))
-for line in lines:
-    print(("│{:<%d}│{:<%d}│" % (mx, mx)).format(*line))
-print(("╰{:─<%d}┴{:─<%d}╯" % (mx, mx)).format("",""))
+print("Comment Removal:")
+print(multiLineTabulate(rows=[[testRustProgram, acr]], headers=["Before Comment Removal", "After Comment Removal"]))
 
 m.input(testRustProgram)
 
-print("Generated Tokens:")
-print(tabulate(map(lambda tok: [tok.type,tok.value], tokenTypes(m)), headers=["TYPE", "VALUE"], tablefmt="orgtbl"))
+print("\nGenerated Tokens:")
+print(multiLineTabulate(map(lambda tok: [tok.type,tok.value], tokenTypes(m)), headers=["TYPE", "VALUE"]))

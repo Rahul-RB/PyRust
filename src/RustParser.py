@@ -1,5 +1,6 @@
 # Built-in
 import re
+import json
 
 # Installed
 from ply import yacc
@@ -21,7 +22,8 @@ class RustParser(PLYParser):
             yacc_optimize=False,
             yacctab=None,
             yacc_debug=False,
-            taboutputdir=''):
+            taboutputdir='',
+            verbose=0,):
         """ Create a new RustParser.
 
             Some arguments for controlling the debug/optimization
@@ -73,6 +75,7 @@ class RustParser(PLYParser):
         """
 
         # NOTE: set lex/yacc optimize to False due to generated files.
+        self.verbose = verbose
         self.clex = lexer(fileName="test-file-name.rs" , errorFunc=self._lexErrorFunc)
 
         self.clex.build(optimize=lex_optimize,
@@ -100,6 +103,8 @@ class RustParser(PLYParser):
 
         # [0] is set of keywords, [1] is the global scope.
         self.symbolTable = [{ keyword for keyword in self.clex.keywords }]
+        if self.verbose > 0:
+            self.printSymbolTable()
 
         # Keeps track of the last token given to yacc (the lookahead token)
         self._lastYieldedToken = None
@@ -239,8 +244,11 @@ class RustParser(PLYParser):
 
             p[0] = RustAST.ArrayDecl(entry, typ["length"], assignments, self._token_coord(p, 1))
 
-        print("Adding ", (ide, mut, typ), "to", self.symbolTable[-1])
         self.symbolTable[-1][ide] = entry
+
+        if self.verbose > 0:
+            print("Found Delcaration for %s %s." % ("Variable" if typ["declType"] == "var" else "Array", ide))
+            self.printSymbolTable()
 
     def p_selStmt(self, p):
         """ selStmt : IF expr compStmt
@@ -369,15 +377,18 @@ class RustParser(PLYParser):
     def p_lbrace(self, p):
         """ lbrace : LBRACE
         """
-        print("\nNew scope...")
         self.symbolTable.append({})
+        if self.verbose > 0:
+            print("Found New Compound Statement.")
+            self.printSymbolTable()
 
     def p_rbrace(self, p):
         """ rbrace : RBRACE
         """
-        print("\nPopping:", self.symbolTable[-1])
-        print("Symbol Table: ", self.symbolTable)
         self.symbolTable.pop()
+        if self.verbose > 0:
+            print("Reached End of Compound Statement.")
+            self.printSymbolTable()
 
     def p_type(self, p):
         """ type : dataType
@@ -576,3 +587,87 @@ class RustParser(PLYParser):
             self._parse_error("Before: %s" % p.value, self._coord(p.lineno, p.lexpos-self.clex.lexer.lexdata.rfind('\n', 0, p.lexpos)))
         else:
             self._parse_error("Reached EOF (maybe due to mismatched braces).", self._coord(len(self.sourceCode)-1))
+
+    # Utility functions for printing symbol table.
+    def _dictTable(self, sd):
+        rows = []
+        for entry in sd:
+            rows.append([entry, json.dumps(sd[entry])])
+        if len(rows) == 0:
+            rows=[["", ""]]
+        return multiLineTabulate(rows, ["IDENTIFIER", "DESCRIPTION"])
+
+    def printSymbolTable(self):
+        st = map(lambda x: [self._dictTable(x) if not isinstance(x, set) else "KEYWORDS: " + ",".join([str(keyword) for keyword in x])], self.symbolTable)
+        print(multiLineTabulate(st, ["PER SCOPE SYMBOL TABLE"]))
+        if self.verbose > 1:
+            input()
+
+# Utility function placed here for convenience
+from itertools import zip_longest
+
+# This function can take cells with multiple lines of text. Headers can only be a single line.
+# Example:
+#     For rows, header = [["r1c1", "r1c2"], ["r2c1", "r2c2l1\nr2c2l3\nr2c2l3"], ["r3c1l1\nr3c1l2\nr3c1l3", "r3c2"]], ["H1", "H2"]
+#     We get the following table:
+#     ╭──────┬──────╮
+#     │  H1  │  H2  │
+#     ╞══════╪══════╡
+#     │r1c1  │r1c2  │
+#     ├──────┼──────┤
+#     │r2c1  │r2c2l1│
+#     │      │r2c2l3│
+#     │      │r2c2l3│
+#     ├──────┼──────┤
+#     │r3c1l1│r3c2  │
+#     │r3c1l2│      │
+#     │r3c1l3│      │
+#     ╰──────┴──────╯
+def multiLineTabulate(rows, headers):
+    rowWidths = [len(header) for header in headers]
+
+    lines = []
+    for row in rows:
+        rowList = []
+        for column, cell in enumerate(row):
+            rowList.append([])
+            for line in cell.split("\n"):
+                lineLen = len(line)
+                rowWidths[column] = max(lineLen, rowWidths[column])
+                rowList[column].append(line)
+        lines.append(rowList)
+
+    dashs = ["{:─<%d}" % width for width in rowWidths]
+    doubleDashs = ["{:═<%d}" % width for width in rowWidths]
+    spaceCentred = ["{:^%d}" % width for width in rowWidths]
+    spaceLeft = ["{:<%d}" % width for width in rowWidths]
+
+    topHolder = "╭%s╮" % ("┬".join(dashs))
+    bottomHolder = "╰%s╯" % ("┴".join(dashs))
+
+    centredRowHolder = "│%s│" % ("│".join(spaceCentred))
+    leftRowHolder = "│%s│" % ("│".join(spaceLeft))
+    headerLineHolder = "╞%s╡" % ("╪".join(doubleDashs))
+    lineHolder = "├%s┤" % ("┼".join(dashs))
+
+    emptys = [""] * len(headers)
+
+    table = []
+
+    table.append(topHolder.format(*emptys))
+    table.append(centredRowHolder.format(*headers))
+    table.append(headerLineHolder.format(*emptys))
+
+    rows = []
+    for row in lines:
+        tmp = []
+        for line in zip_longest(*row):
+            line = list(map(lambda x: "" if x == None else str(x) , line))
+            tmp.append(leftRowHolder.format(*line))
+        tmp = "\n".join(tmp)
+        rows.append(tmp)
+    table.append(("\n"+lineHolder.format(*emptys)+"\n").join(rows))
+
+    table.append(bottomHolder.format(*emptys))
+
+    return "\n".join(table)

@@ -289,8 +289,10 @@ class RustParser(PLYParser):
         isArray = isinstance(p[1], RustAST.ArrayElement)
 
         p1 = p[1]
+        p1Coord = self._token_coord(p, 1)
         if isArray:
             p1 = p[1].arrId.name
+            p1Coord = p[1].coord
 
         for scope in reversed(self.symbolTable):
             if p1 in scope:
@@ -300,10 +302,10 @@ class RustParser(PLYParser):
                 break
 
         if not isDecl:
-            self._parse_error("%s is not declared!" % p1, self._token_coord(p, 1))
+            self._parse_error("%s is not declared!" % p1, p1Coord)
 
         if not isMut:
-            self._parse_error("%s is not mutable!" % p1, self._token_coord(p, 1))
+            self._parse_error("%s is not mutable!" % p1, p1Coord)
 
         if isArray:
             p[1].arrId.type = typ["dataType"]
@@ -314,18 +316,18 @@ class RustParser(PLYParser):
 
         if not isArray:
             if typ["declType"] != "var":
-                self._parse_error("%s is not a variable!" % p1, self._token_coord(p, 1))
+                self._parse_error("%s is not a variable!" % p1, p1Coord)
 
             lhs = RustAST.ID(p1, typ["dataType"], self._token_coord(p, 1))
         else:
             if typ["declType"] != "arr":
-                self._parse_error("%s is not an array!" % p1, p[1].coord)
+                self._parse_error("%s is not an array!" % p1, p1Coord)
 
             lhs = p[1]
 
         lhs, rhs = self._checkAssignmentType(lhs, rhs, p)
 
-        p[0] = RustAST.Assignment("=", lhs, rhs, self._token_coord(p, 1))
+        p[0] = RustAST.Assignment("=", lhs, rhs, p1Coord)
 
     def p_init(self, p):
         """ init : expr
@@ -381,7 +383,6 @@ class RustParser(PLYParser):
         """ type : dataType
                  | LBRACKET dataType SEMI INT_CONST_DEC RBRACKET
         """
-
         typ = {}
         if len(p) == 2:
             typ = {
@@ -439,7 +440,7 @@ class RustParser(PLYParser):
                         break
 
                 if not isDecl:
-                    self._parse_error("Variable %s is not declared!" % p1, self._token_coord(p, 1))
+                    self._parse_error("%s is not declared!" % p1, p[1].coord)
 
                 if isArray:
                     p[1].arrId.type = typ["dataType"]

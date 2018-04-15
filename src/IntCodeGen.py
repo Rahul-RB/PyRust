@@ -133,7 +133,7 @@ def _threeAddr_If(ifNode):
     if ifNode.iffalse:
         elseCode = "\n" + codeCache[ifNode.iffalse]
 
-    code = "\tif " + tTable[ifNode.cond] + " goto " + cTable[ifNode.iftrue] + elseCode + "\n\tgoto " + elseC
+    code = "\tif " + _getOperand(ifNode.cond) + " goto " + cTable[ifNode.iftrue] + elseCode + "\n\tgoto " + elseC
     return _joinCodes(codeCache[ifNode.cond], code, codeCache[ifNode.iftrue]) + elseC + ":"
 
 def _threeAddr_While(whileNode):

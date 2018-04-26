@@ -32,7 +32,7 @@ class Quad():
         self.type = None
         if op in {"+", "-", "*", "/", "%", ">", "<", ">=", "<=", "!=", "==", "!", "&&", "||"}:
             self.type = "BINOP" if z else "UNOP"
-        elif op in {"ASSIGN", "LABEL", "IF", "GOTO", "VAR", "ARR"}:
+        elif op in {"ASSIGN", "LABEL", "IF", "GOTO", "VAR", "ARR", "EMPTY"}:
             self.type = op
 
     def __repr__(self):
@@ -40,19 +40,21 @@ class Quad():
 
     def __str__(self):
         if self.type == "BINOP":
-            return "\t%s = %s %s %s" % (self.x, self.y, self.op, self.z)
+            return "    %s = %s %s %s" % (self.x, self.y, self.op, self.z)
         elif self.type == "UNOP":
-            return "\t%s = %s %s" % (self.x, self.op, self.y)
+            return "    %s = %s %s" % (self.x, self.op, self.y)
         elif self.type == "ASSIGN":
-            return "\t%s = %s" % (self.x, self.y)
+            return "    %s = %s" % (self.x, self.y)
         elif self.type == "LABEL":
             return "%s:" % self.x
         elif self.type in {"VAR", "ARR"}:
-            return "\t%s %s = alloc %s" % (self.op.lower(), self.x, self.y)
+            return "    %s %s = alloc %s" % (self.op.lower(), self.x, self.y)
         elif self.type == "IF":
-            return "\tif %s goto %s" % (self.y, self.x)
+            return "    if %s goto %s" % (self.y, self.x)
         elif self.type == "GOTO":
-            return "\tgoto %s" % (self.x)
+            return "    goto %s" % (self.x)
+        elif self.type == "EMPTY":
+            return ""
 
         return "str: op=%s, x=%s, y=%s, z=%s" % (self.op, self.x, self.y, self.z)
 
@@ -102,20 +104,31 @@ def _getBytes(typ):
     length = int(typ["type"].get("length", 1))
     return str(bytesMap[typ["type"]["dataType"]] * length)
 
+class Operand():
+    def __init__(self, value = "", type = None):
+        self.value = value
+        self.type = type
+
+    def __repr__(self):
+        return "<Operand>: [%s, %s]" % (self.value, self.type)
+
+    def __str__(self):
+        return str(self.value)
+
 # Gets the operand representation of a node
 def _getOperand(node):
-    opRepr = ""
+    opRepr = Operand()
 
     if isinstance(node, RustAST.BinaryOp):
-        opRepr = tTable[node]
+        opRepr = Operand(tTable[node], "TEMPVAR")
     if isinstance(node, RustAST.UnaryOp):
-        opRepr = tTable[node]
+        opRepr = Operand(tTable[node], "TEMPVAR")
     elif isinstance(node, RustAST.Constant):
-        opRepr = str(node.value)
+        opRepr = Operand(str(node.value), "CONSTANT")
     elif isinstance(node, RustAST.ID):
-        opRepr = node.name
+        opRepr = Operand(node.name, "ID")
     elif isinstance(node, RustAST.ArrayElement):
-        opRepr = node.arrId.name + "[%s]" % tTable[node.index]
+        opRepr = Operand(node.arrId.name + "[%s]" % tTable[node.index], "AE")
 
     return opRepr
 
@@ -133,7 +146,7 @@ def _threeAddr_BinaryOp(binOpNode):
         tTable[binOpNode] = _getT()
 
     binaryOpQuad = Quad(op = binOpNode.op,
-                        x  = tTable[binOpNode],
+                        x  = Operand(tTable[binOpNode], "TEMPVAR"),
                         y  = _getOperand(binOpNode.left),
                         z  = _getOperand(binOpNode.right))
     return _joinCodes(childCode, binaryOpQuad)
@@ -145,7 +158,7 @@ def _threeAddr_UnaryOp(unOpNode):
         tTable[unOpNode] = _getT()
 
     unaryOpQuad = Quad(op = unOpNode.op,
-                       x  = tTable[unOpNode],
+                       x  = Operand(tTable[unOpNode], "TEMPVAR"),
                        y  = _getOperand(unOpNode.expr))
     return _joinCodes(childCode, unaryOpQuad)
 
@@ -154,9 +167,9 @@ def _threeAddr_ArrayElement(aeNode):
         tTable[aeNode.index] = _getT()
 
     aeQuad = Quad(op = "*",
-                  x  = tTable[aeNode.index],
+                  x  = Operand(tTable[aeNode.index], "TEMPVAR"),
                   y  = _getOperand(aeNode.index),
-                  z  = str(bytesMap[aeNode.arrId.type]))
+                  z  = Operand(str(bytesMap[aeNode.arrId.type]), "CONSTANT"))
     return _joinCodes(codeCache[aeNode.index], aeQuad)
     
 def _threeAddr_Assignment(assnNode):

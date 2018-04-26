@@ -451,7 +451,7 @@ class RustParser(PLYParser):
                         break
 
                 if not isDecl:
-                    self._parse_error("%s is not declared!" % p1, p[1].coord)
+                    self._parse_error("%s is not declared!" % p1, self._token_coord(p, 1))
 
                 if isArray:
                     p[1].arrId.type = typ["dataType"]

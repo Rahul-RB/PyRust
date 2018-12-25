@@ -21,6 +21,43 @@ bytesMap = {
     "bool": 1
 }
 
+# Row in Quadruples data-structure
+class Quad():
+    def __init__(self, op=None, x=None, y=None, z=None):
+        self.op = op
+        self.x = x
+        self.y = y
+        self.z = z
+
+        self.type = None
+        if op in {"+", "-", "*", "/", "%", ">", "<", ">=", "<=", "!=", "==", "!", "&&", "||"}:
+            self.type = "BINOP" if z else "UNOP"
+        elif op in {"ASSIGN", "LABEL", "IF", "GOTO", "VAR", "ARR", "EMPTY"}:
+            self.type = op
+
+    def __repr__(self):
+        return "<Quad>: [op=%s, x=%s, y=%s, z=%s]" % (self.op, self.x, self.y, self.z)
+
+    def __str__(self):
+        if self.type == "BINOP":
+            return "    %s = %s %s %s" % (self.x, self.y, self.op, self.z)
+        elif self.type == "UNOP":
+            return "    %s = %s %s" % (self.x, self.op, self.y)
+        elif self.type == "ASSIGN":
+            return "    %s = %s" % (self.x, self.y)
+        elif self.type == "LABEL":
+            return "%s:" % self.x
+        elif self.type in {"VAR", "ARR"}:
+            return "    %s %s = alloc %s" % (self.op.lower(), self.x, self.y)
+        elif self.type == "IF":
+            return "    if %s goto %s" % (self.y, self.x)
+        elif self.type == "GOTO":
+            return "    goto %s" % (self.x)
+        elif self.type == "EMPTY":
+            return ""
+
+        return "str: op=%s, x=%s, y=%s, z=%s" % (self.op, self.x, self.y, self.z)
+
 # post order traversal of the ast to generate code bottom up
 def _postOrderTraverse(node, offset=0):
     code = codeCache.get(node, None)
@@ -56,39 +93,51 @@ def _getC():
 
 # Utility Functions
 def _joinCodes(*codeList):
-    joined = "\n".join((code for code in codeList if code != ""))
-
-    if len(joined) > 1:
-        return joined + "\n"
-    return ""
+    for code in codeList:
+        if isinstance(code, Quad):
+            yield code
+        else:
+            for quad in code:
+                yield quad
 
 def _getBytes(typ):
     length = int(typ["type"].get("length", 1))
     return str(bytesMap[typ["type"]["dataType"]] * length)
 
+class Operand():
+    def __init__(self, value = "", type = None):
+        self.value = value
+        self.type = type
+
+    def __repr__(self):
+        return "<Operand>: [%s, %s]" % (self.value, self.type)
+
+    def __str__(self):
+        return str(self.value)
+
 # Gets the operand representation of a node
 def _getOperand(node):
-    opRepr = ""
+    opRepr = Operand()
 
     if isinstance(node, RustAST.BinaryOp):
-        opRepr = tTable[node]
+        opRepr = Operand(tTable[node], "TEMPVAR")
     if isinstance(node, RustAST.UnaryOp):
-        opRepr = tTable[node]
+        opRepr = Operand(tTable[node], "TEMPVAR")
     elif isinstance(node, RustAST.Constant):
-        opRepr = str(node.value)
+        opRepr = Operand(str(node.value), "CONSTANT")
     elif isinstance(node, RustAST.ID):
-        opRepr = node.name
+        opRepr = Operand(node.name, "ID")
     elif isinstance(node, RustAST.ArrayElement):
-        opRepr = node.arrId.name + "[%s]" % tTable[node.index]
+        opRepr = Operand(node.arrId.name + "[%s]" % tTable[node.index], "AE")
 
     return opRepr
 
 # IC generator functions
 def _threeAddr_ID(idNode):
-    return ""
+    return []
 
 def _threeAddr_Constant(cNode):
-    return ""
+    return []
 
 def _threeAddr_BinaryOp(binOpNode):
     childCode = _joinCodes(codeCache[binOpNode.left], codeCache[binOpNode.right])
@@ -96,7 +145,11 @@ def _threeAddr_BinaryOp(binOpNode):
     if not tTable.get(binOpNode, None):
         tTable[binOpNode] = _getT()
 
-    return childCode + "\t" + tTable[binOpNode] + " = " + _getOperand(binOpNode.left) + " " + binOpNode.op + " " + _getOperand(binOpNode.right)
+    binaryOpQuad = Quad(op = binOpNode.op,
+                        x  = Operand(tTable[binOpNode], "TEMPVAR"),
+                        y  = _getOperand(binOpNode.left),
+                        z  = _getOperand(binOpNode.right))
+    return _joinCodes(childCode, binaryOpQuad)
 
 def _threeAddr_UnaryOp(unOpNode):
     childCode = _joinCodes(codeCache[unOpNode.expr])
@@ -104,19 +157,28 @@ def _threeAddr_UnaryOp(unOpNode):
     if not tTable.get(unOpNode, None):
         tTable[unOpNode] = _getT()
 
-    return childCode + "\t" + tTable[unOpNode] + " = " + unOpNode.op + " " + _getOperand(unOpNode.expr)
+    unaryOpQuad = Quad(op = unOpNode.op,
+                       x  = Operand(tTable[unOpNode], "TEMPVAR"),
+                       y  = _getOperand(unOpNode.expr))
+    return _joinCodes(childCode, unaryOpQuad)
 
 def _threeAddr_ArrayElement(aeNode):
     if not tTable.get(aeNode.index, None):
         tTable[aeNode.index] = _getT()
 
-    return _joinCodes(codeCache[aeNode.index],
-        "\t" + tTable[aeNode.index] + " = " + _getOperand(aeNode.index) + " * " + str(bytesMap[aeNode.arrId.type]))[:-1]
+    aeQuad = Quad(op = "*",
+                  x  = Operand(tTable[aeNode.index], "TEMPVAR"),
+                  y  = _getOperand(aeNode.index),
+                  z  = Operand(str(bytesMap[aeNode.arrId.type]), "CONSTANT"))
+    return _joinCodes(codeCache[aeNode.index], aeQuad)
     
 def _threeAddr_Assignment(assnNode):
     childCode = _joinCodes(codeCache[assnNode.lvalue], codeCache[assnNode.rvalue])
 
-    return childCode + "\t" + _getOperand(assnNode.lvalue) + " " + assnNode.op + " " + _getOperand(assnNode.rvalue)
+    assnQuad = Quad(op = "ASSIGN",
+                    x  = _getOperand(assnNode.lvalue),
+                    y  = _getOperand(assnNode.rvalue))
+    return _joinCodes(childCode, assnQuad)
 
 def _threeAddr_Compound(compNode):
     childCode = _joinCodes(*(codeCache[child] for child in compNode.block_items))
@@ -124,40 +186,61 @@ def _threeAddr_Compound(compNode):
     if not cTable.get(compNode, None):
         cTable[compNode] = _getC()
 
-    return cTable[compNode] + ":" + childCode[:-1]
+    compQuad = Quad(op = "LABEL", x = cTable[compNode])
+    return _joinCodes(compQuad, childCode)
 
 def _threeAddr_If(ifNode):
-    elseC = _getC()
-    elseCode = ""
+    afterIfC = _getC()
+    elseCode = []
 
     if ifNode.iffalse:
-        elseCode = "\n" + codeCache[ifNode.iffalse]
+        elseCode = codeCache[ifNode.iffalse]
 
-    code = "\tif " + _getOperand(ifNode.cond) + " goto " + cTable[ifNode.iftrue] + elseCode + "\n\tgoto " + elseC
-    return _joinCodes(codeCache[ifNode.cond], code, codeCache[ifNode.iftrue]) + elseC + ":"
+    ifQuad = Quad(op = "IF",
+                  x  = cTable[ifNode.iftrue],
+                  y  = _getOperand(ifNode.cond))
+
+    gotoAfterIf = Quad(op = "GOTO", x = afterIfC)
+
+    labelAfterIf = Quad(op = "LABEL", x = afterIfC)
+    # code = "\tif " + _getOperand(ifNode.cond) + " goto " + cTable[ifNode.iftrue] + elseCode + "\n\tgoto " + elseC
+    return _joinCodes(codeCache[ifNode.cond], ifQuad, elseCode, gotoAfterIf, codeCache[ifNode.iftrue], labelAfterIf)
 
 def _threeAddr_While(whileNode):
     condC = _getC()
     falseC = _getC()
 
+    labelCond = Quad(op = "LABEL", x = condC)
+    gotoCond = Quad(op = "GOTO", x = condC)
+
+    condQuad = Quad(op = "IF",
+                    x  = cTable[whileNode.stmt],
+                    y  = _getOperand(whileNode.cond))
+
+    gotoAfterWhile = Quad(op = "GOTO", x = falseC)
+    labelAfterWhile = Quad(op = "LABEL", x = falseC)
+
     return _joinCodes(
-        condC + ":" + codeCache[whileNode.cond], 
-        "\tif " + _getOperand(whileNode.cond) + " goto " + cTable[whileNode.stmt],
-        "\tgoto " + falseC,
+        labelCond,
+        codeCache[whileNode.cond],
+        condQuad,
+        gotoAfterWhile,
         codeCache[whileNode.stmt],
-        "\tgoto " + condC,
-        falseC + ":")[:-1]
+        gotoCond,
+        labelAfterWhile)
 
 def _threeAddr_Declaration(declNode):
-    return _joinCodes(
-        "\t.var " + declNode.assn.lvalue.name + " = alloc " + _getBytes(declNode.type),
-        codeCache[declNode.assn])[:-1]
+    declQuad = Quad(op = "VAR",
+                    x  = declNode.assn.lvalue.name,
+                    y  = _getBytes(declNode.type))
+    return _joinCodes(declQuad, codeCache[declNode.assn])
 
 def _threeAddr_ArrayDecl(arrDeclNode):
     childCode = _joinCodes(*(codeCache[assn] for assn in arrDeclNode.assignments))
-    return _joinCodes(
-        "\t.arr " + arrDeclNode.assignments[0].lvalue.arrId.name + " = alloc " + _getBytes(arrDeclNode.type),
-        childCode)[:-2]
+    declQuad = Quad(op = "ARR",
+                    x  = arrDeclNode.assignments[0].lvalue.arrId.name,
+                    y  = _getBytes(arrDeclNode.type))
+    return _joinCodes(declQuad, childCode)
 
 def _threeAddr_FileAST(fileASTNode):
     return codeCache[fileASTNode.ext[0]]
@@ -186,7 +269,7 @@ def _resetGlobals():
     cc = -1
     cTable = {}
 
-# Returns a string for the Intermediate Code
+# Returns a list of quads for the Intermediate Code
 def generate(ast):
     _resetGlobals()
     _postOrderTraverse(ast)

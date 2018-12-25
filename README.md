@@ -47,9 +47,9 @@
 #### Intermediate Code Generation
 - [x] Three address code generation
 #### Optimizing Intermediate Code
-- [ ] Constant folding
-- [ ] Constant Propogation
+- [x] Constant folding
+- [x] Constant Propogation
 - [ ] ~Common subexpression elimination (optional)~
 - [ ] Dead code elimination
 - [ ] ~Reducing temporaries (optional)~
-- [ ] Loop optimizations 
+- [x] Loop optimizations 

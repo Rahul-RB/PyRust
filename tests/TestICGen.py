@@ -15,4 +15,4 @@ ast = parser.parse(path=sys.argv[1])
 
 ic = icg.generate(ast)
 
-print(ic)
+print("\n".join(map(str, ic)))
